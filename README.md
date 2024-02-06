@@ -1,3 +1,3 @@
-Initial outline for the RegioNinja project implementation:
+Initial working impmlementatiin for the RegioNinja project:
 
-parser is almost working needs for edge case testing and code formatting
+Parser is almost working needs for edge case testing and code formatting
