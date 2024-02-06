@@ -15,7 +15,15 @@ OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name,
 **/
 
 public class Parser {
-
+    public enum SubclauseType {
+        OBJECTIVE,
+        BOUNDS_CLAUSE,
+        OPTIMIZATION,
+        GAPLESS,
+        HEURISTIC,
+        WHERE,
+        UNKNOWN
+    }
     //space and CASE sensitive right now, could be improved in the future
     public static boolean validateSelect(String selectSubstring) {
         String regex = "^SELECT REGIONS(?:, REGIONS\\.p|, REGIONS\\.HET)?";
@@ -36,23 +44,61 @@ public class Parser {
 
     }
 
-    private static boolean validateWhereClause(String selectSubstring) {
-        return selectSubstring.equalsIgnoreCase("SELECT REGIONS");
+    private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
+        whereSubstring = removeCommasFromNums(whereSubstring);
+
+        String[] subclausesArr = whereSubstring.split(",");
+        for (String item : subclausesArr) {
+            System.out.println(item);
+        }
+
+        if (subclausesArr.length > 6 | subclausesArr.length < 2) {
+            throw new InvalidRSqlSyntaxException("WHERE Clause is specified with wrong number of args. Perhaps you forgot a comma!");
+        }
+        return false;
+    }
+//So that 10,000 -> 10000, way easier to then parse the subclauses by strings
+    public static String removeCommasFromNums(String strToClean) {
+        String regex = "(?<=[\\d])(,)(?=[\\d])";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(strToClean);
+        return m.replaceAll("");
+    }
+
+    public static SubclauseType determineSubclauseType(String subclause) {
+        if (subclause.matches("^OBJECTIVE.*")) {
+            return SubclauseType.OBJECTIVE;
+        } else if (subclause.matches(".*(<|<=|>|>=).*")) {
+            return SubclauseType.BOUNDS_CLAUSE;
+        } else if (subclause.matches("^OPTIMIZATION.*")) {
+            return SubclauseType.OPTIMIZATION;
+        } else if (subclause.matches("^GAPLESS.*")) {
+            return SubclauseType.GAPLESS;
+        } else if (subclause.matches("^HEURISTIC.*")) {
+            return SubclauseType.HEURISTIC;
+        } else if (subclause.matches("^WHERE.*")) {
+            return SubclauseType.WHERE;
+        } else {
+            // Handle cases where the type is unknown or unsupported
+            return SubclauseType.UNKNOWN;
+        }
     }
 
 
-    private static boolean noOrderByValidation(String[] substringArr) {
+    private static boolean noOrderByValidation(String[] substringArr) throws InvalidRSqlSyntaxException {
         return (validateSelect(substringArr[0]) && validateFromClause(substringArr[1]) && validateWhereClause(substringArr[2]));
     }
 
-    private static boolean standardValidation(String[] substringArr) {
+    private static boolean standardValidation(String[] substringArr) throws InvalidRSqlSyntaxException {
+        validateWhereClause(substringArr[3]);
         return (validateSelect(substringArr[0]) && validateOrderByClause(substringArr[1]) && validateFromClause(substringArr[2]) && validateWhereClause(substringArr[3]));
     }
 
 
-        public static void main (String[]args) throws InvalidRSqlSyntaxException {
+    public static void main (String[]args) throws InvalidRSqlSyntaxException {
 
         boolean validSyntax = false;
+
             String validQuery = "SELECT REGIONS;"
                     + " ORDER BY HET DESC;"
                     + " FROM US_counties;"
@@ -64,23 +110,16 @@ public class Parser {
             String invalidQuery = "INVALID QUERY";
 
             String[] substringsArr = validQuery.split(";");
-            System.out.println("statements " + substringsArr.length);
+
             //there will be exactly 3- 4 statements seperated by semicolons
             if (substringsArr.length > 4 | substringsArr.length < 3) {
                 throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
             }
-            System.out.println("Test intial thing: " + validateSelect(substringsArr[0]));
 
             if (substringsArr.length == 3) {
                 validSyntax = noOrderByValidation(substringsArr);
             }
             validSyntax = standardValidation(substringsArr);
-
-            for (int i = 0; i < substringsArr.length; i++) {
-                String curSubStr = substringsArr[i];
-                System.out.println(substringsArr[i]);
-
-            }
 
             System.out.println("Query Valid " + validSyntax);
 
@@ -89,9 +128,9 @@ public class Parser {
 }
 
 // Overall query structure
-/*
+/* 3 - 4 total sub statements
 1. Select statement
-2. Order by or From
+~2. Order by
 3. From if order by is done
 4. Where with a bunch of stuff that can be valid or not
  */
