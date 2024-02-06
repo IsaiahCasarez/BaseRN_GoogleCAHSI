@@ -55,6 +55,10 @@ public class ParserTest {
         assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC MSA"));
         assertEquals(Parser.SubclauseType.WHERE, Parser.determineSubclauseType("WHERE p = (k | 𝑝𝑀𝐴𝑋 )"));
         assertEquals(Parser.SubclauseType.UNKNOWN, Parser.determineSubclauseType("UNKNOWN_SUBCLAUSE"));
+
+        assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("5000 <= MAX ON population"));
+        assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC TABU"));
+        assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION CONNECTED"));
     }
 
     //TODO: once all individual components are implemented test an entire valid RSQL request

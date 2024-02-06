@@ -44,12 +44,63 @@ public class Parser {
 
     }
 
+    private static void handleSubclause(SubclauseType type, String subclause) {
+        switch (type) {
+            case OBJECTIVE:
+                handleObjective(subclause);
+                break;
+            case BOUNDS_CLAUSE:
+                handleBoundsClause(subclause);
+                break;
+            case OPTIMIZATION:
+                handleOptimization(subclause);
+                break;
+            case GAPLESS:
+                handleGapless(subclause);
+                break;
+            case HEURISTIC:
+                handleHeuristic(subclause);
+                break;
+            case WHERE:
+                handleWhere(subclause);
+                break;
+            case UNKNOWN:
+                // Handle cases where the type is unknown or unsupported
+                break;
+        }
+    }
+
+    // Define empty methods for each case
+    private static void handleObjective(String subclause) {
+        // Implement handling for OBJECTIVE type
+    }
+
+    private static void handleBoundsClause(String subclause) {
+        // Implement handling for BOUNDS_CLAUSE type
+    }
+
+    private static void handleOptimization(String subclause) {
+        // Implement handling for OPTIMIZATION type
+    }
+
+    private static void handleGapless(String subclause) {
+        // Implement handling for GAPLESS type
+    }
+
+    private static void handleHeuristic(String subclause) {
+        // Implement handling for HEURISTIC type
+    }
+
+    private static void handleWhere(String subclause) {
+        // Implement handling for WHERE type
+    }
     private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
         whereSubstring = removeCommasFromNums(whereSubstring);
 
         String[] subclausesArr = whereSubstring.split(",");
         for (String item : subclausesArr) {
-            System.out.println(item);
+            SubclauseType type = determineSubclauseType(item);
+            handleSubclause(type, item);
         }
 
         if (subclausesArr.length > 6 | subclausesArr.length < 2) {
