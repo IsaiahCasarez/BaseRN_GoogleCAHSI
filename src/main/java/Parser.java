@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.regex.*;
 
 //Template for the Query Syntax
@@ -71,28 +72,43 @@ public class Parser {
     }
 
     // Define empty methods for each case
-    private static void handleObjective(String subclause) {
-        // Implement handling for OBJECTIVE type
+    public static boolean handleObjective(String subclause) {
+        String regex = "OBJECTIVE (HETEROGENEOUS|COMPACT) ON [a-zA-Z_][a-zA-Z0-9_]*$";
+        return subclause.matches(regex);
     }
 
-    private static void handleBoundsClause(String subclause) {
-        // Implement handling for BOUNDS_CLAUSE type
+    public static boolean handleBoundsClause(String subclause) {
+        subclause = removeCommasFromNums(subclause);
+
+        //this case is really hard and needs some thought
+       //TODO: lower_bound (< | <=) (SUM | MIN | MAX | COUNT | AVG) (< | <=) (upper_bound) ON attribute_name]
+        //"5 < SUM < 10 ON attribute_name"
+        String regex = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*(<|<=)\\s*\\d+\\s*ON\\s+[a-zA-Z_]+";
+
+        return subclause.matches(regex);
     }
 
-    private static void handleOptimization(String subclause) {
-        // Implement handling for OPTIMIZATION type
+
+
+
+    public static boolean handleOptimization(String subclause) {
+        String regex = "^OPTIMIZATION\\s+(RANDOM|CONNECTED)$";
+        return subclause.matches(regex);
     }
 
-    private static void handleGapless(String subclause) {
-        // Implement handling for GAPLESS type
+    public static boolean handleGapless(String subclause) {
+        String regex = "^GAPLESS$";
+        return subclause.matches(regex);
     }
 
-    private static void handleHeuristic(String subclause) {
-        // Implement handling for HEURISTIC type
+    public static boolean handleHeuristic(String subclause) {
+        String regex = "^HEURISTIC\\s+(MSA|TABU)$";
+        return subclause.matches(regex);
     }
 
-    private static void handleWhere(String subclause) {
-        // Implement handling for WHERE type
+    public static boolean handleWhere(String subclause) {
+        String regex = "^\\s*WHERE\\s+P\\s*=\\s+(K|PMAX)\\s*$";
+        return subclause.toUpperCase().matches(regex);
     }
     private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
         whereSubstring = removeCommasFromNums(whereSubstring);
@@ -178,6 +194,15 @@ public class Parser {
         }
 }
 
+/*
+
+Overall logic:
+Dvide into the Clauses:
+SELECT
+ORDER BY
+
+ */
+
 // Overall query structure
 /* 3 - 4 total sub statements
 1. Select statement
@@ -186,7 +211,7 @@ public class Parser {
 4. Where with a bunch of stuff that can be valid or not
  */
 
-//Where Clause Specifics: This is the trciky one out of them al
+//Where Clause Specifics: This is the tricky one out of them al
 /*
  will range from 2 - 6. Must be in that exact range
  1. WHERE

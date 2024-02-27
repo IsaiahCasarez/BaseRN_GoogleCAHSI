@@ -57,9 +57,77 @@ public class ParserTest {
         assertEquals(Parser.SubclauseType.UNKNOWN, Parser.determineSubclauseType("UNKNOWN_SUBCLAUSE"));
 
         assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("5000 <= MAX ON population"));
+        assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("11,000 < SUM < 20,000 ON population"));
+
         assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC TABU"));
         assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION CONNECTED"));
     }
 
+    @Test
+    public void testHandleWhere() {
+        assertTrue(Parser.handleWhere("WHERE p = k"));
+        assertTrue(Parser.handleWhere("WHERE p = pMAX"));
+        assertTrue(Parser.handleWhere("  WHERE   p    =   k  "));
+        assertFalse(Parser.handleWhere("WHERE p = invalid"));
+        assertTrue(Parser.handleWhere("where P = K"));
+        assertFalse(Parser.handleWhere("WHERE p = k and some additional text"));
+    }
+
+    @Test
+    public void testHandleHeuristic() {
+        assertTrue(Parser.handleHeuristic("HEURISTIC MSA"));
+        assertTrue(Parser.handleHeuristic("HEURISTIC TABU"));
+        assertFalse(Parser.handleHeuristic("HEURISTIC INVALID")); // Should fail with an invalid heuristic
+        assertFalse(Parser.handleHeuristic("INVALID HEURISTIC")); // Should fail with an invalid format
+        assertFalse(Parser.handleHeuristic("HEURISTIC")); // Should fail without a specified heuristic
+    }
+
+    @Test
+    public void testHandleGapless() {
+        assertTrue(Parser.handleGapless("GAPLESS"));
+        assertFalse(Parser.handleGapless("GAPLESS ExtraText"));
+        assertFalse(Parser.handleGapless("ExtraText GAPLESS"));
+    }
+
+    @Test
+    public void testHandleOptimization() {
+        assertTrue(Parser.handleOptimization("OPTIMIZATION RANDOM"));
+        assertTrue(Parser.handleOptimization("OPTIMIZATION CONNECTED"));
+
+        assertFalse(Parser.handleOptimization("OPTIMIZATION RANDOM ExtraText"));
+
+        assertFalse(Parser.handleOptimization("optimization CONNECTED"));
+        assertFalse(Parser.handleOptimization("OPTIMIZATION INVALID"));
+    }
+
+    @Test
+    public void testHandleObjective() {
+        assertTrue(Parser.handleObjective("OBJECTIVE HETEROGENEOUS ON attribute_name"));
+        assertTrue(Parser.handleObjective("OBJECTIVE COMPACT ON another_attribute"));
+
+        assertFalse(Parser.handleObjective("OBJECTIVE COMPACT ON another attribute"));
+        assertFalse(Parser.handleObjective("OBJECTIVE INVALID ON attribute_name")); // Should fail due to invalid type
+        assertFalse(Parser.handleObjective("INVALID HETEROGENEOUS ON attribute_name")); // Should fail due to invalid keyword
+        assertFalse(Parser.handleObjective("OBJECTIVE HETEROGENEOUS INVALID")); // Should fail due to missing attribute
+        assertFalse(Parser.handleObjective("INVALID")); // Should fail due to invalid structure
+    }
+
+    @Test
+    public void testHandleBoundsClause() {
+        assertTrue(Parser.handleBoundsClause("5 < SUM < 10 ON attribute_name"));
+        assertTrue(Parser.handleBoundsClause("15 <= AVG <= 20 ON another_attribute"));
+        assertTrue(Parser.handleBoundsClause("11,000 < SUM < 20,000 ON population"));
+//        assertTrue(Parser.handleBoundsClause(" 500 <= MIN ON population"));
+//
+//
+//        assertFalse(Parser.handleBoundsClause("notadigit <= AVG <= 20 ON another_attribute"));
+//        assertFalse(Parser.handleBoundsClause("Invalid bounds clause"));
+//        assertFalse(Parser.handleBoundsClause("10 < INVALID < 20 ON invalid_attribute"));
+    }
+
+    //TODO: just make everything case in sensitive by forcing to uppercase initally
+
     //TODO: once all individual components are implemented test an entire valid RSQL request
+
+    //TODO: change the overall code structure and format to good practice :)
 }
