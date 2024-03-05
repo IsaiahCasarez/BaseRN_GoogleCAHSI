@@ -1,7 +1,7 @@
 import org.junit.Test;
-
+import org.junit.Rule;
 import static org.junit.Assert.*;
-
+import org.junit.rules.ExpectedException;
 
 public class ParserTest {
 
@@ -22,16 +22,16 @@ public class ParserTest {
     @Test
     public void testOrderByValidCases() {
         assertTrue(Parser.validateOrderByClause("ORDER BY HET ASC"));
-        assertTrue(Parser.validateOrderByClause("ORDER BY HET DSC"));
+        assertTrue(Parser.validateOrderByClause("ORDER BY HET DESC"));
         assertTrue(Parser.validateOrderByClause("ORDER BY CARD ASC"));
-        assertTrue(Parser.validateOrderByClause("ORDER BY CARD DSC"));
+        assertTrue(Parser.validateOrderByClause("ORDER BY CARD DESC"));
     }
 
     @Test
     public void testOrderByInvalidCases() {
         assertFalse(Parser.validateOrderByClause("ORDER BY HET")); // Missing ASC/DSC
         assertFalse(Parser.validateOrderByClause("ORDER BY CARD")); // Missing ASC/DSC
-        assertFalse(Parser.validateOrderByClause("ORDER BY HET DESC")); // Should be DSC, not DESC
+        assertFalse(Parser.validateOrderByClause("ORDER BY HET DSC")); // Should be DSC, not DESC
         assertFalse(Parser.validateOrderByClause("ORDER BY INVALID ASC")); // Invalid keyword
         assertFalse(Parser.validateOrderByClause("INVALID ORDER BY HET ASC"));
     }
@@ -52,6 +52,7 @@ public class ParserTest {
         assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("lower_bound (<) SUM (<) upper_bound ON attribute_name"));
         assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION RANDOM"));
         assertEquals(Parser.SubclauseType.GAPLESS, Parser.determineSubclauseType("GAPLESS"));
+        assertEquals(Parser.SubclauseType.WHERE, Parser.determineSubclauseType(" WHERE p=14"));
         assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC MSA"));
         assertEquals(Parser.SubclauseType.WHERE, Parser.determineSubclauseType("WHERE p = (k | 𝑝𝑀𝐴𝑋 )"));
         assertEquals(Parser.SubclauseType.UNKNOWN, Parser.determineSubclauseType("UNKNOWN_SUBCLAUSE"));
@@ -63,12 +64,20 @@ public class ParserTest {
         assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION CONNECTED"));
     }
 
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
     @Test
-    public void testHandleWhere() {
+    public void testHandleWhere() throws InvalidRSqlSyntaxException {
         assertTrue(Parser.handleWhere("WHERE p = k"));
         assertTrue(Parser.handleWhere("WHERE p = pMAX"));
         assertTrue(Parser.handleWhere("  WHERE   p    =   k  "));
-        assertFalse(Parser.handleWhere("WHERE p = invalid"));
+
+        exceptionRule.expect(InvalidRSqlSyntaxException.class);
+        exceptionRule.expectMessage("Invalid syntax in WHERE clause: WHERE P = INVALID");
+
+        Parser.handleWhere("WHERE p = invalid");
+
         assertTrue(Parser.handleWhere("where P = K"));
         assertFalse(Parser.handleWhere("WHERE p = k and some additional text"));
     }
@@ -102,6 +111,7 @@ public class ParserTest {
 
     @Test
     public void testHandleObjective() {
+        assertTrue(Parser.handleObjective(" OBJECTIVE COMPACT"));
         assertTrue(Parser.handleObjective("OBJECTIVE HETEROGENEOUS ON attribute_name"));
         assertTrue(Parser.handleObjective("OBJECTIVE COMPACT ON another_attribute"));
 
@@ -117,15 +127,43 @@ public class ParserTest {
         assertTrue(Parser.handleBoundsClause("5 < SUM < 10 ON attribute_name"));
         assertTrue(Parser.handleBoundsClause("15 <= AVG <= 20 ON another_attribute"));
         assertTrue(Parser.handleBoundsClause("11,000 < SUM < 20,000 ON population"));
-//        assertTrue(Parser.handleBoundsClause(" 500 <= MIN ON population"));
-//
-//
-//        assertFalse(Parser.handleBoundsClause("notadigit <= AVG <= 20 ON another_attribute"));
-//        assertFalse(Parser.handleBoundsClause("Invalid bounds clause"));
-//        assertFalse(Parser.handleBoundsClause("10 < INVALID < 20 ON invalid_attribute"));
+        assertTrue(Parser.handleBoundsClause("500 <= MIN ON population"));
+
+
+        assertFalse(Parser.handleBoundsClause("notadigit <= AVG <= 20 ON another_attribute"));
+        assertFalse(Parser.handleBoundsClause("Invalid bounds clause"));
+        assertFalse(Parser.handleBoundsClause("10 < INVALID < 20 ON invalid_attribute"));
     }
 
-    //TODO: just make everything case in sensitive by forcing to uppercase initally
+    @Test
+    public void testValidQuery() throws InvalidRSqlSyntaxException {
+        String validQuery = "SELECT REGIONS;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;"
+                + " WHERE p=14, GAPLESS,"
+                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
+                + " ON population,"
+                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+
+        String validQuery2 = "SELECT REGIONS, REGIONS.p;" +
+                "FROM NYC_census_tracts;" +
+                "WHERE p=pMAX," +
+                "5000 <= MAX ON population, OBJECTIVE COMPACT," +
+                "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+
+
+        boolean valid = Parser.validateQuery(validQuery);
+        assertTrue("Query should be valid", valid);
+        assertTrue(Parser.validateQuery((validQuery2)));
+    }
+
+    @Test(expected = InvalidRSqlSyntaxException.class)
+    public void testInvalidQuery() throws InvalidRSqlSyntaxException {
+        String invalidQuery = "SELECT INVALID_QUERY;";
+        Parser.validateQuery(invalidQuery);
+        fail("Expected InvalidRSqlSyntaxException to be thrown");
+    }
+
 
     //TODO: once all individual components are implemented test an entire valid RSQL request
 

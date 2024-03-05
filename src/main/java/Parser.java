@@ -25,6 +25,7 @@ public class Parser {
         WHERE,
         UNKNOWN
     }
+
     //space and CASE sensitive right now, could be improved in the future
     public static boolean validateSelect(String selectSubstring) {
         String regex = "^SELECT REGIONS(?:, REGIONS\\.p|, REGIONS\\.HET)?";
@@ -32,48 +33,81 @@ public class Parser {
     }
 
     public static boolean validateOrderByClause(String OrderBySubstring) {
-        String regex = "^ORDER BY (HET|CARD) (ASC|DSC)$";
-        return OrderBySubstring.matches(regex);
+        String regex = "^ORDER BY (HET|CARD) (ASC|DESC)$";
+        return OrderBySubstring.trim().matches(regex);
     }
 
     public static boolean validateFromClause(String FromClauseSubStr) {
         String regex = "^FROM\\s.*$";
+        //should only be two words
         if (FromClauseSubStr.trim().split(" ").length == 2) {
-            return FromClauseSubStr.matches(regex);
+            return FromClauseSubStr.trim().matches(regex);
         }
         return false;
 
     }
 
-    private static void handleSubclause(SubclauseType type, String subclause) {
+    private static boolean handleSubclause(SubclauseType type, String subclause) throws InvalidRSqlSyntaxException{
+        boolean subclauseValidationResult = false;
+        subclause = subclause.trim();
         switch (type) {
             case OBJECTIVE:
-                handleObjective(subclause);
+                subclauseValidationResult = handleObjective(subclause);
                 break;
             case BOUNDS_CLAUSE:
-                handleBoundsClause(subclause);
+                subclauseValidationResult = handleBoundsClause(subclause);
                 break;
             case OPTIMIZATION:
-                handleOptimization(subclause);
+                subclauseValidationResult = handleOptimization(subclause);
                 break;
             case GAPLESS:
-                handleGapless(subclause);
+                subclauseValidationResult = handleGapless(subclause);
                 break;
             case HEURISTIC:
-                handleHeuristic(subclause);
+                subclauseValidationResult = handleHeuristic(subclause);
                 break;
             case WHERE:
-                handleWhere(subclause);
+                subclauseValidationResult = handleWhere(subclause);
                 break;
             case UNKNOWN:
                 // Handle cases where the type is unknown or unsupported
+                System.out.println("unknown classify: \n" + subclause);
+                subclauseValidationResult = false;
                 break;
         }
+
+        return subclauseValidationResult;
     }
+
+    private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
+        whereSubstring = removeCommasFromNums(whereSubstring);
+        String[] subclausesArr = whereSubstring.split(",");
+
+        if (subclausesArr.length > 6 || subclausesArr.length < 2) {
+            throw new InvalidRSqlSyntaxException("WHERE Clause is specified with the wrong number of args. Perhaps you forgot a comma!");
+        }
+
+        boolean validWhere = true; // Assume WHERE clause is valid by default
+
+        for (String item : subclausesArr) {
+            SubclauseType type = determineSubclauseType(item);
+            boolean subclauseValidationResult = handleSubclause(type, item);
+
+            // Aggregate the validation results for each subclause
+            validWhere &= subclauseValidationResult;
+
+            if (!subclauseValidationResult) {
+                System.out.println("Validation failed for WHERE subclause: \n" + item);
+            }
+        }
+
+        return validWhere;
+    }
+
 
     // Define empty methods for each case
     public static boolean handleObjective(String subclause) {
-        String regex = "OBJECTIVE (HETEROGENEOUS|COMPACT) ON [a-zA-Z_][a-zA-Z0-9_]*$";
+        String regex = "^\\s*OBJECTIVE\\s+(HETEROGENEOUS|COMPACT)(\\s+ON\\s+[a-zA-Z_][a-zA-Z0-9_]*)?$";
         return subclause.matches(regex);
     }
 
@@ -81,14 +115,14 @@ public class Parser {
         subclause = removeCommasFromNums(subclause);
 
         //this case is really hard and needs some thought
-       //TODO: lower_bound (< | <=) (SUM | MIN | MAX | COUNT | AVG) (< | <=) (upper_bound) ON attribute_name]
-        //"5 < SUM < 10 ON attribute_name"
+        //TODO: lower_bound (< | <=) (SUM | MIN | MAX | COUNT | AVG) (< | <=) (upper_bound) ON attribute_name]
+        String regex2 = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*ON\\s+[a-zA-Z_]+";
         String regex = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*(<|<=)\\s*\\d+\\s*ON\\s+[a-zA-Z_]+";
 
-        return subclause.matches(regex);
+
+        //500 <= MIN ON population
+        return subclause.matches(regex2) || subclause.matches(regex);
     }
-
-
 
 
     public static boolean handleOptimization(String subclause) {
@@ -98,7 +132,7 @@ public class Parser {
 
     public static boolean handleGapless(String subclause) {
         String regex = "^GAPLESS$";
-        return subclause.matches(regex);
+        return subclause.trim().matches(regex);
     }
 
     public static boolean handleHeuristic(String subclause) {
@@ -106,25 +140,19 @@ public class Parser {
         return subclause.matches(regex);
     }
 
-    public static boolean handleWhere(String subclause) {
-        String regex = "^\\s*WHERE\\s+P\\s*=\\s+(K|PMAX)\\s*$";
-        return subclause.toUpperCase().matches(regex);
-    }
-    private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
-        whereSubstring = removeCommasFromNums(whereSubstring);
+    public static boolean handleWhere(String subclause) throws InvalidRSqlSyntaxException {
+        String regex = "^\\s*WHERE\\s+P\\s*=(\\s*(K|PMAX|\\d+)\\s*)$";
+        boolean isValid = subclause.trim().toUpperCase().matches(regex);
 
-        String[] subclausesArr = whereSubstring.split(",");
-        for (String item : subclausesArr) {
-            SubclauseType type = determineSubclauseType(item);
-            handleSubclause(type, item);
+        if (!isValid) {
+            throw new InvalidRSqlSyntaxException("Invalid syntax in WHERE clause: " + subclause.trim().toUpperCase());
         }
 
-        if (subclausesArr.length > 6 | subclausesArr.length < 2) {
-            throw new InvalidRSqlSyntaxException("WHERE Clause is specified with wrong number of args. Perhaps you forgot a comma!");
-        }
-        return false;
+        return isValid;
     }
-//So that 10,000 -> 10000, way easier to then parse the subclauses by strings
+
+
+    //So that 10,000 -> 10000, way easier to then parse the subclauses by strings
     public static String removeCommasFromNums(String strToClean) {
         String regex = "(?<=[\\d])(,)(?=[\\d])";
         Pattern p = Pattern.compile(regex);
@@ -133,6 +161,7 @@ public class Parser {
     }
 
     public static SubclauseType determineSubclauseType(String subclause) {
+        subclause = subclause.trim();
         if (subclause.matches("^OBJECTIVE.*")) {
             return SubclauseType.OBJECTIVE;
         } else if (subclause.matches(".*(<|<=|>|>=).*")) {
@@ -157,41 +186,46 @@ public class Parser {
     }
 
     private static boolean standardValidation(String[] substringArr) throws InvalidRSqlSyntaxException {
-        validateWhereClause(substringArr[3]);
+
         return (validateSelect(substringArr[0]) && validateOrderByClause(substringArr[1]) && validateFromClause(substringArr[2]) && validateWhereClause(substringArr[3]));
     }
 
-
-    public static void main (String[]args) throws InvalidRSqlSyntaxException {
-
+    public static boolean validateQuery(String query) throws InvalidRSqlSyntaxException {
         boolean validSyntax = false;
 
-            String validQuery = "SELECT REGIONS;"
-                    + " ORDER BY HET DESC;"
-                    + " FROM US_counties;"
-                    + " WHERE p=14, GAPLESS,"
-                    + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
-                    + " ON population,"
-                    + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+        String[] substringsArr = query.split(";");
 
-            String invalidQuery = "INVALID QUERY";
-
-            String[] substringsArr = validQuery.split(";");
-
-            //there will be exactly 3- 4 statements seperated by semicolons
-            if (substringsArr.length > 4 | substringsArr.length < 3) {
-                throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
-            }
-
-            if (substringsArr.length == 3) {
-                validSyntax = noOrderByValidation(substringsArr);
-            }
-            validSyntax = standardValidation(substringsArr);
-
-            System.out.println("Query Valid " + validSyntax);
-
-
+        //there will be exactly 3- 4 statements seperated by semicolons
+        if (substringsArr.length > 4 | substringsArr.length < 3) {
+            throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
         }
+
+        if (substringsArr.length == 3) {
+            validSyntax = noOrderByValidation(substringsArr);
+        } else {
+            validSyntax = standardValidation(substringsArr);
+        }
+        return validSyntax;
+    }
+
+
+    public static void main(String[] args) throws InvalidRSqlSyntaxException {
+
+        String validQuery = "SELECT REGIONS;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;"
+                + " WHERE p=14, GAPLESS,"
+                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
+                + " ON population,"
+                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+
+        try {
+            boolean valid = validateQuery(validQuery);
+            System.out.println("Query Valid: " + valid);
+        } catch (InvalidRSqlSyntaxException e) {
+            System.err.println("Invalid RSql Syntax: " + e.getMessage());
+        }
+    }
 }
 
 /*
