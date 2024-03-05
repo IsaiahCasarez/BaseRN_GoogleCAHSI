@@ -25,6 +25,30 @@ public class Parser {
         WHERE,
         UNKNOWN
     }
+    public enum MainClauseType {
+        SELECT,
+        ORDER_BY,
+        FROM,
+        WHERE,
+        UNKNOWN
+    }
+
+    public static MainClauseType determineMainClauseType(String clause) {
+        String trimmedClause = clause.trim().toUpperCase();
+
+        if (trimmedClause.startsWith("SELECT")) {
+            return MainClauseType.SELECT;
+        } else if (trimmedClause.startsWith("ORDER BY")) {
+            return MainClauseType.ORDER_BY;
+        } else if (trimmedClause.startsWith("FROM")) {
+            return MainClauseType.FROM;
+        } else if (trimmedClause.startsWith("WHERE")) {
+            return MainClauseType.WHERE;
+        } else {
+            return MainClauseType.UNKNOWN;
+        }
+    }
+
 
     //space and CASE sensitive right now, could be improved in the future
     public static boolean validateSelect(String selectSubstring) {
@@ -180,33 +204,55 @@ public class Parser {
         }
     }
 
-
-    private static boolean noOrderByValidation(String[] substringArr) throws InvalidRSqlSyntaxException {
-        return (validateSelect(substringArr[0]) && validateFromClause(substringArr[1]) && validateWhereClause(substringArr[2]));
-    }
-
-    private static boolean standardValidation(String[] substringArr) throws InvalidRSqlSyntaxException {
-
-        return (validateSelect(substringArr[0]) && validateOrderByClause(substringArr[1]) && validateFromClause(substringArr[2]) && validateWhereClause(substringArr[3]));
-    }
-
     public static boolean validateQuery(String query) throws InvalidRSqlSyntaxException {
-        boolean validSyntax = false;
+        boolean hasSelect = false;
+        boolean hasFrom = false;
+        boolean hasWhere = false;
 
         String[] substringsArr = query.split(";");
 
-        //there will be exactly 3- 4 statements seperated by semicolons
-        if (substringsArr.length > 4 | substringsArr.length < 3) {
+        // Ensure there are exactly 3-4 statements separated by semicolons
+        if (substringsArr.length > 4 || substringsArr.length < 3) {
             throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
         }
 
-        if (substringsArr.length == 3) {
-            validSyntax = noOrderByValidation(substringsArr);
-        } else {
-            validSyntax = standardValidation(substringsArr);
+        for (int i = 0; i < substringsArr.length; i++) {
+            MainClauseType mainClauseType = determineMainClauseType(substringsArr[i].trim());
+
+            switch (mainClauseType) {
+                case SELECT:
+                    hasSelect = true;
+                    break;
+                case FROM:
+                    hasFrom = true;
+                    break;
+                case WHERE:
+                    hasWhere = true;
+                    break;
+                case UNKNOWN:
+                    // Handle cases where the main clause type is unknown or unsupported
+                    System.out.println("Unknown main clause type: " + substringsArr[i]);
+                    break;
+            }
         }
-        return validSyntax;
+
+        // Check for the presence of required clauses and throw an exception if any is missing
+        if (!hasSelect) {
+            throw new InvalidRSqlSyntaxException("Missing SELECT clause!");
+        }
+
+        if (!hasFrom) {
+            throw new InvalidRSqlSyntaxException("Missing FROM clause!");
+        }
+
+        if (!hasWhere) {
+            throw new InvalidRSqlSyntaxException("Missing WHERE clause!");
+        }
+
+        return true;
     }
+
+
 
 
     public static void main(String[] args) throws InvalidRSqlSyntaxException {
@@ -219,8 +265,12 @@ public class Parser {
                 + " ON population,"
                 + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
 
+        String invalid = "SELECT REGIONS;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;";
+
         try {
-            boolean valid = validateQuery(validQuery);
+            boolean valid = validateQuery(invalid);
             System.out.println("Query Valid: " + valid);
         } catch (InvalidRSqlSyntaxException e) {
             System.err.println("Invalid RSql Syntax: " + e.getMessage());

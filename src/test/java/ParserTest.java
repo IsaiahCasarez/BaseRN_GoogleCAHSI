@@ -157,12 +157,23 @@ public class ParserTest {
         assertTrue(Parser.validateQuery((validQuery2)));
     }
 
+
     @Test(expected = InvalidRSqlSyntaxException.class)
     public void testInvalidQuery() throws InvalidRSqlSyntaxException {
         String invalidQuery = "SELECT INVALID_QUERY;";
+
         Parser.validateQuery(invalidQuery);
         fail("Expected InvalidRSqlSyntaxException to be thrown");
     }
+
+    @Test(expected = InvalidRSqlSyntaxException.class)
+    public void testInvalidQuery2() throws InvalidRSqlSyntaxException {
+        String invalid = "SELECT REGIONS;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;";
+        Parser.validateQuery(invalid);
+    }
+
 
 
     //TODO: once all individual components are implemented test an entire valid RSQL request
