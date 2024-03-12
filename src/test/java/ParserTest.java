@@ -1,8 +1,10 @@
+import ParserFiles.InvalidRSqlSyntaxException;
+import ParserFiles.Parser;
 import org.junit.Test;
 import org.junit.Rule;
 import static org.junit.Assert.*;
 import org.junit.rules.ExpectedException;
-
+import ParserFiles.*;
 public class ParserTest {
 
     //TODO: clean up this logic into seperate submodules, just get the working implementaiton first.
@@ -163,7 +165,7 @@ public class ParserTest {
         String invalidQuery = "SELECT INVALID_QUERY;";
 
         Parser.validateQuery(invalidQuery);
-        fail("Expected InvalidRSqlSyntaxException to be thrown");
+        fail("Expected ParserFiles.InvalidRSqlSyntaxException to be thrown");
     }
 
     @Test(expected = InvalidRSqlSyntaxException.class)
@@ -174,9 +176,16 @@ public class ParserTest {
         Parser.validateQuery(invalid);
     }
 
+    @Test(expected = InvalidRSqlSyntaxException.class)
+    public void testInvalidQuery3() throws InvalidRSqlSyntaxException {
+        String invalid = "SELECT OTHER, Regions.p" +
+                "FROM NYC_census_tracts;" +
+                "WHERE p=pMAX," +
+                "5000 <= MAX ON population, OBJECTIVE COMPACT," +
+                "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+        Parser.validateQuery(invalid);
+    }
 
 
-    //TODO: once all individual components are implemented test an entire valid RSQL request
 
-    //TODO: change the overall code structure and format to good practice :)
 }

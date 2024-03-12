@@ -1,6 +1,7 @@
-import java.util.Arrays;
-import java.util.regex.*;
+package ParserFiles;
 
+import java.util.regex.*;
+import static ParserFiles.QueryEnums.*;
 //Template for the Query Syntax
 /**
 SELECT REGIONS, [REGIONS.p, REGIONS.HET];
@@ -16,22 +17,8 @@ OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name,
 **/
 
 public class Parser {
-    public enum SubclauseType {
-        OBJECTIVE,
-        BOUNDS_CLAUSE,
-        OPTIMIZATION,
-        GAPLESS,
-        HEURISTIC,
-        WHERE,
-        UNKNOWN
-    }
-    public enum MainClauseType {
-        SELECT,
-        ORDER_BY,
-        FROM,
-        WHERE,
-        UNKNOWN
-    }
+    QuerySpecifics queryInformation;
+
 
     public static MainClauseType determineMainClauseType(String clause) {
         String trimmedClause = clause.trim().toUpperCase();
@@ -58,6 +45,7 @@ public class Parser {
 
     public static boolean validateOrderByClause(String OrderBySubstring) {
         String regex = "^ORDER BY (HET|CARD) (ASC|DESC)$";
+        //queryInformation.setORDERTYPE();
         return OrderBySubstring.trim().matches(regex);
     }
 
@@ -151,6 +139,7 @@ public class Parser {
 
     public static boolean handleOptimization(String subclause) {
         String regex = "^OPTIMIZATION\\s+(RANDOM|CONNECTED)$";
+
         return subclause.matches(regex);
     }
 
@@ -269,12 +258,9 @@ public class Parser {
                 + " ORDER BY HET DESC;"
                 + " FROM US_counties;";
 
-        try {
-            boolean valid = validateQuery(invalid);
-            System.out.println("Query Valid: " + valid);
-        } catch (InvalidRSqlSyntaxException e) {
-            System.err.println("Invalid RSql Syntax: " + e.getMessage());
-        }
+
+//        ParserFiles.QuerySpecifics queryInformation = new ParserFiles.QuerySpecifics();
+      //  System.out.println(validQuery(invalid));
     }
 }
 
