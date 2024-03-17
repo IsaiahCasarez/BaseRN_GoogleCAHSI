@@ -59,16 +59,35 @@ public class Parser {
                 + " FROM NYC_census_tracts; "
                 + " WHERE p=pmax , "
                 + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
-                + " OPTIMIZATION CONNECTED, HEURISTIC TABU;";
-
+                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+        //missing the WHERE
         String invalid = "SELECT REGIONS;"
                 + " ORDER BY HET DESC;"
                 + " FROM US_counties;";
+        //ORDERBY bad syntax
+        String invalidQuery2 = " SELECT REGIONS, REGIONS.p;"
+                + "ORDER BY HET;"
+                + " FROM NYC_census_tracts; "
+                + " WHERE p=pmax , "
+                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+        //no select clause
+        String invalidQuery3 =
+                "ORDER BY HET DESC;"
+                + " FROM NYC_census_tracts; "
+                + " WHERE p=pmax , "
+                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
 
         validateQueryPrintSpecifics(validQuery);
         validateQueryPrintSpecifics(validQuery2);
         validateQueryPrintSpecifics(validQuery3);
+
+        //These will throw exceptions that are then handled and error messages are printed
+        //Note: The unit tests have a lot mor testing for individual clauses this is better to test full query compatiability in main
         validateQueryPrintSpecifics(invalid);
+        validateQueryPrintSpecifics(invalidQuery2);
+        validateQueryPrintSpecifics(invalidQuery3);
     }
 
     public static void validateQueryPrintSpecifics(String query) {
@@ -79,7 +98,6 @@ public class Parser {
         }
         catch (InvalidRSqlSyntaxException e) {
             System.out.println(e);
-            System.out.println("Query syntax was invalid!!! Error message is above for specific syntax issue ^");
         }
     }
     public  MainClauseType determineMainClauseType(String clause) throws InvalidRSqlSyntaxException {
@@ -296,7 +314,7 @@ public class Parser {
         boolean hasFrom = false;
         boolean hasWhere = false;
 
-        String[] substringsArr = query.split(";");
+        String[] substringsArr = query.trim().toUpperCase().split(";");
 
         // Ensure there are exactly 3-4 main statements separated by semicolons
         if (substringsArr.length > 4 || substringsArr.length < 3) {
