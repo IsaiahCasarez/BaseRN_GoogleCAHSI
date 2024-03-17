@@ -39,11 +39,12 @@ public class Parser {
     }
 
     public  boolean validateSelect(String selectSubstring) throws InvalidRSqlSyntaxException {
-        String regex = "^SELECT REGIONS(?:, REGIONS\\.p|, REGIONS\\.HET)?";
+        String regex = "^SELECT REGIONS(?:, REGIONS\\.P|, REGIONS\\.HET)?";
 
-        if (!selectSubstring.matches(regex)) {
+        if (!selectSubstring.toUpperCase().trim().matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid SELECT syntax: " + selectSubstring);
         }
+        this.queryInformation.parseREGIONSOptional(selectSubstring.toUpperCase());
 
         return true;
     }
@@ -54,6 +55,7 @@ public class Parser {
         if (!OrderBySubstring.trim().matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid ORDER BY syntax: " + OrderBySubstring);
         }
+        this.queryInformation.parseORDERBY(OrderBySubstring);
 
         return true;
     }
@@ -64,6 +66,7 @@ public class Parser {
         if (FromClauseSubStr.trim().split(" ").length != 2 || !FromClauseSubStr.trim().matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid FROM syntax: " + FromClauseSubStr);
         }
+        this.queryInformation.parseFromField(FromClauseSubStr);
 
         return true;
     }
@@ -105,7 +108,7 @@ public class Parser {
         whereSubstring = removeCommasFromNums(whereSubstring);
         String[] subclausesArr = whereSubstring.split(",");
 
-        if (subclausesArr.length > 6 || subclausesArr.length < 2) {
+        if (subclausesArr.length > 7 || subclausesArr.length < 2) {
             throw new InvalidRSqlSyntaxException("WHERE Clause is specified with the wrong number of args. Perhaps you forgot a comma!");
         }
 
@@ -131,6 +134,7 @@ public class Parser {
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid OBJECTIVE syntax: " + subclause);
         }
+        queryInformation.parseObjectiveInfo(subclause);
         return true;
     }
 
@@ -142,12 +146,10 @@ public class Parser {
         String regex2 = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*ON\\s+[a-zA-Z_]+";
         String regex = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*(<|<=)\\s*\\d+\\s*ON\\s+[a-zA-Z_]+";
 
-
-        //500 <= MIN ON population
-        if (subclause.matches(regex2) || subclause.matches(regex)) {
-            return true;
+        if (!( subclause.matches(regex2) || subclause.matches(regex))) {
+            throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
         }
-        throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
+        return true;
     }
 
     public  boolean handleOptimization(String subclause) throws InvalidRSqlSyntaxException {
@@ -155,6 +157,7 @@ public class Parser {
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
         }
+        queryInformation.parseOPTIMIZATION(subclause);
         return true;
     }
 
@@ -163,6 +166,8 @@ public class Parser {
         if (!subclause.trim().matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid GAPLESS syntax: " + subclause);
         }
+        //we have a gapless situation
+        queryInformation.setGapless(true);
         return true;
     }
 
@@ -171,6 +176,7 @@ public class Parser {
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid HEURISTIC syntax: " + subclause);
         }
+        queryInformation.parseHEURISTIC(subclause);
         return true;
     }
 
@@ -182,6 +188,7 @@ public class Parser {
         if (!isValid) {
             throw new InvalidRSqlSyntaxException("Invalid syntax in WHERE clause: " + subclause.trim().toUpperCase());
         }
+        this.queryInformation.parseWhereInformation(subclause);
 
         return isValid;
     }
@@ -229,22 +236,28 @@ public class Parser {
             throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
         }
 
-        for (int i = 0; i < substringsArr.length; i++) {
-            MainClauseType mainClauseType = determineMainClauseType(substringsArr[i].trim());
+        for (String clause : substringsArr) {
+            MainClauseType mainClauseType = determineMainClauseType(clause.trim());
 
             switch (mainClauseType) {
                 case SELECT:
                     hasSelect = true;
+                    validateSelect(clause);
                     break;
                 case FROM:
                     hasFrom = true;
+                    validateFromClause(clause);
                     break;
                 case WHERE:
                     hasWhere = true;
+                    validateWhereClause(clause);
+                    break;
+                case ORDER_BY:
+                    validateOrderByClause(clause);
                     break;
                 case UNKNOWN:
                     // Handle cases where the main clause type is unknown or unsupported
-                    System.out.println("Unknown main clause type: " + substringsArr[i]);
+                    System.out.println("Unknown main clause type: " + clause);
                     break;
             }
         }
@@ -265,24 +278,48 @@ public class Parser {
         return true;
     }
 
+    public QuerySpecifics getQueryInfo() {
+        return this.queryInformation;
+    }
 
     public static void main(String[] args) throws InvalidRSqlSyntaxException {
 
-        Parser parser = new Parser();
+        Parser parserQuery1 = new Parser();
 
-        String validQuery = "SELECT REGIONS;"
+        String validQuery = "SELECT REGIONS, REGIONS.p;"
                 + " ORDER BY HET DESC;"
                 + " FROM US_counties;"
                 + " WHERE p=14, GAPLESS,"
                 + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
                 + " ON population,"
+                + "OPTIMIZATION RANDOM,"
+                + "HEURISTIC MSA,"
                 + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
 
+        Parser parserQuery2 = new Parser();
+        String validQuery2 = " SELECT REGIONS, REGIONS.p;"
+                + "FROM NYC_census_tracts;"
+                + "WHERE p=pmax ,"
+                + "5000 <= MAX ON population, OBJECTIVE COMPACT,"
+                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+
+        Parser invalidQuery = new Parser();
         String invalid = "SELECT REGIONS;"
                 + " ORDER BY HET DESC;"
                 + " FROM US_counties;";
 
-       System.out.println(parser.validateQuery(validQuery));
+        System.out.println(validQuery + " is valid: " + parserQuery1.validateQuery(validQuery) + " with contents of: ");
+        System.out.println(parserQuery1.getQueryInfo().toString());
+
+        System.out.println(validQuery2 + " is valid: " + parserQuery2.validateQuery(validQuery2) + " with contents of: ");
+        System.out.println(parserQuery2.getQueryInfo().toString());
+
+       try {
+           invalidQuery.validateQuery(invalid);
+       }
+       catch (InvalidRSqlSyntaxException e) {
+           System.out.println(e);
+       }
     }
 }
 
