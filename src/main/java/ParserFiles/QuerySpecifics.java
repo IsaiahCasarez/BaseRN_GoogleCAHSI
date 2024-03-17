@@ -84,7 +84,7 @@ public class QuerySpecifics {
         validateRequiredFields();
     }
 
-    // Helper method to validate required fields
+    // Helper method to ensure all required fields are here
     private void validateRequiredFields() {
         if (REGIONS == null || From == null || ObjectiveType == null) {
             throw new IllegalArgumentException("Required fields are not provided.");

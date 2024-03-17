@@ -13,57 +13,97 @@ public class ParserTest {
      */
     @Test
     public void testSelectValidation() {
-        assertTrue(Parser.validateSelect("SELECT REGIONS"));
-        assertTrue(Parser.validateSelect("SELECT REGIONS, REGIONS.p"));
-        assertTrue(Parser.validateSelect("SELECT REGIONS, REGIONS.HET"));
-        assertFalse(Parser.validateSelect("SELECT OTHER"));
-        assertFalse(Parser.validateSelect("SELECT OTHER, Regions.p"));
-        assertFalse(Parser.validateSelect("SELECT OTHER, Regions.HET"));
+        // Valid SELECT statements
+        try {
+            assertTrue(Parser.validateSelect("SELECT REGIONS"));
+            assertTrue(Parser.validateSelect("SELECT REGIONS, REGIONS.p"));
+            assertTrue(Parser.validateSelect("SELECT REGIONS, REGIONS.HET"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Exception should not have been thrown for valid SELECT statements");
+        }
+
+        // Invalid SELECT statements
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateSelect("SELECT OTHER");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateSelect("SELECT OTHER, Regions.p");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateSelect("SELECT OTHER, Regions.HET");
+        });
     }
 
     @Test
     public void testOrderByValidCases() {
-        assertTrue(Parser.validateOrderByClause("ORDER BY HET ASC"));
-        assertTrue(Parser.validateOrderByClause("ORDER BY HET DESC"));
-        assertTrue(Parser.validateOrderByClause("ORDER BY CARD ASC"));
-        assertTrue(Parser.validateOrderByClause("ORDER BY CARD DESC"));
+        // Valid ORDER BY statements
+        try {
+            assertTrue(Parser.validateOrderByClause("ORDER BY HET ASC"));
+            assertTrue(Parser.validateOrderByClause("ORDER BY HET DESC"));
+            assertTrue(Parser.validateOrderByClause("ORDER BY CARD ASC"));
+            assertTrue(Parser.validateOrderByClause("ORDER BY CARD DESC"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Exception should not have been thrown for valid ORDER BY statements");
+        }
     }
 
     @Test
     public void testOrderByInvalidCases() {
-        assertFalse(Parser.validateOrderByClause("ORDER BY HET")); // Missing ASC/DSC
-        assertFalse(Parser.validateOrderByClause("ORDER BY CARD")); // Missing ASC/DSC
-        assertFalse(Parser.validateOrderByClause("ORDER BY HET DSC")); // Should be DSC, not DESC
-        assertFalse(Parser.validateOrderByClause("ORDER BY INVALID ASC")); // Invalid keyword
-        assertFalse(Parser.validateOrderByClause("INVALID ORDER BY HET ASC"));
+        // Invalid ORDER BY statements
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateOrderByClause("ORDER BY HET"); // Missing ASC/DSC
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateOrderByClause("ORDER BY CARD"); // Missing ASC/DSC
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateOrderByClause("ORDER BY HET DSC"); // Should be DESC, not DSC
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateOrderByClause("ORDER BY INVALID ASC"); // Invalid keyword
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateOrderByClause("INVALID ORDER BY HET ASC");
+        });
     }
 
     @Test
     public void testvalidateFromClause() {
-        assertFalse(Parser.validateFromClause("FROM multiple words"));
-        assertFalse(Parser.validateFromClause("not multiple words"));
-        assertTrue(Parser.validateFromClause("FROM NYC_census_tracts"));
-        assertTrue(Parser.validateFromClause("FROM US_counties"));
-        //TODO: edge CASE: what if the path has a SPACE
-        assertTrue(Parser.validateFromClause("FROM C:\\Users\\John\\Downloads"));
+        // Valid FROM clauses
+        try {
+            assertTrue(Parser.validateFromClause("FROM NYC_census_tracts"));
+            assertTrue(Parser.validateFromClause("FROM US_counties"));
+            assertTrue(Parser.validateFromClause("FROM C:\\Users\\John\\Downloads"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Exception should not have been thrown for valid FROM clauses");
+        }
+
+        // Invalid FROM clauses
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateFromClause("FROM multiple words");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.validateFromClause("FROM not multiple words");
+        });
     }
+
 
     @Test
     public void testSubclauseTypes() {
-        assertEquals(Parser.SubclauseType.OBJECTIVE, Parser.determineSubclauseType("OBJECTIVE HETEROGENEOUS ON attribute_name"));
-        assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("lower_bound (<) SUM (<) upper_bound ON attribute_name"));
-        assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION RANDOM"));
-        assertEquals(Parser.SubclauseType.GAPLESS, Parser.determineSubclauseType("GAPLESS"));
-        assertEquals(Parser.SubclauseType.WHERE, Parser.determineSubclauseType(" WHERE p=14"));
-        assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC MSA"));
-        assertEquals(Parser.SubclauseType.WHERE, Parser.determineSubclauseType("WHERE p = (k | 𝑝𝑀𝐴𝑋 )"));
-        assertEquals(Parser.SubclauseType.UNKNOWN, Parser.determineSubclauseType("UNKNOWN_SUBCLAUSE"));
+        assertEquals(QueryEnums.SubclauseType.OBJECTIVE, Parser.determineSubclauseType("OBJECTIVE HETEROGENEOUS ON attribute_name"));
+        assertEquals(QueryEnums.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("lower_bound (<) SUM (<) upper_bound ON attribute_name"));
+        assertEquals(QueryEnums.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION RANDOM"));
+        assertEquals(QueryEnums.SubclauseType.GAPLESS, Parser.determineSubclauseType("GAPLESS"));
+        assertEquals(QueryEnums.SubclauseType.WHERE, Parser.determineSubclauseType(" WHERE p=14"));
+        assertEquals(QueryEnums.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC MSA"));
+        assertEquals(QueryEnums.SubclauseType.WHERE, Parser.determineSubclauseType("WHERE p = (k | 𝑝𝑀𝐴𝑋 )"));
+        assertEquals(QueryEnums.SubclauseType.UNKNOWN, Parser.determineSubclauseType("UNKNOWN_SUBCLAUSE"));
 
-        assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("5000 <= MAX ON population"));
-        assertEquals(Parser.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("11,000 < SUM < 20,000 ON population"));
+        assertEquals(QueryEnums.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("5000 <= MAX ON population"));
+        assertEquals(QueryEnums.SubclauseType.BOUNDS_CLAUSE, Parser.determineSubclauseType("11,000 < SUM < 20,000 ON population"));
 
-        assertEquals(Parser.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC TABU"));
-        assertEquals(Parser.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION CONNECTED"));
+        assertEquals(QueryEnums.SubclauseType.HEURISTIC, Parser.determineSubclauseType("HEURISTIC TABU"));
+        assertEquals(QueryEnums.SubclauseType.OPTIMIZATION, Parser.determineSubclauseType("OPTIMIZATION CONNECTED"));
     }
 
     @Rule
@@ -86,56 +126,119 @@ public class ParserTest {
 
     @Test
     public void testHandleHeuristic() {
-        assertTrue(Parser.handleHeuristic("HEURISTIC MSA"));
-        assertTrue(Parser.handleHeuristic("HEURISTIC TABU"));
-        assertFalse(Parser.handleHeuristic("HEURISTIC INVALID")); // Should fail with an invalid heuristic
-        assertFalse(Parser.handleHeuristic("INVALID HEURISTIC")); // Should fail with an invalid format
-        assertFalse(Parser.handleHeuristic("HEURISTIC")); // Should fail without a specified heuristic
+        // Valid heuristic cases
+        try {
+            assertTrue(Parser.handleHeuristic("HEURISTIC MSA"));
+            assertTrue(Parser.handleHeuristic("HEURISTIC TABU"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
+
+        // Invalid heuristic cases
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleHeuristic("HEURISTIC INVALID");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleHeuristic("INVALID HEURISTIC");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleHeuristic("HEURISTIC");
+        });
     }
 
     @Test
     public void testHandleGapless() {
-        assertTrue(Parser.handleGapless("GAPLESS"));
-        assertFalse(Parser.handleGapless("GAPLESS ExtraText"));
-        assertFalse(Parser.handleGapless("ExtraText GAPLESS"));
+        // Valid GAPLESS cases
+        try {
+            assertTrue(Parser.handleGapless("GAPLESS"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
+
+        // Invalid GAPLESS cases
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleGapless("GAPLESS ExtraText");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleGapless("ExtraText GAPLESS");
+        });
     }
 
     @Test
     public void testHandleOptimization() {
-        assertTrue(Parser.handleOptimization("OPTIMIZATION RANDOM"));
-        assertTrue(Parser.handleOptimization("OPTIMIZATION CONNECTED"));
+        // Valid OPTIMIZATION cases
+        try {
+            assertTrue(Parser.handleOptimization("OPTIMIZATION RANDOM"));
+            assertTrue(Parser.handleOptimization("OPTIMIZATION CONNECTED"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
 
-        assertFalse(Parser.handleOptimization("OPTIMIZATION RANDOM ExtraText"));
-
-        assertFalse(Parser.handleOptimization("optimization CONNECTED"));
-        assertFalse(Parser.handleOptimization("OPTIMIZATION INVALID"));
+        // Invalid OPTIMIZATION cases
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleOptimization("OPTIMIZATION RANDOM ExtraText");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleOptimization("optimization CONNECTED");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleOptimization("OPTIMIZATION INVALID");
+        });
     }
 
     @Test
     public void testHandleObjective() {
-        assertTrue(Parser.handleObjective(" OBJECTIVE COMPACT"));
-        assertTrue(Parser.handleObjective("OBJECTIVE HETEROGENEOUS ON attribute_name"));
-        assertTrue(Parser.handleObjective("OBJECTIVE COMPACT ON another_attribute"));
+        // Valid OBJECTIVE cases
+        try {
+            assertTrue(Parser.handleObjective(" OBJECTIVE COMPACT"));
+            assertTrue(Parser.handleObjective("OBJECTIVE HETEROGENEOUS ON attribute_name"));
+            assertTrue(Parser.handleObjective("OBJECTIVE COMPACT ON another_attribute"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
 
-        assertFalse(Parser.handleObjective("OBJECTIVE COMPACT ON another attribute"));
-        assertFalse(Parser.handleObjective("OBJECTIVE INVALID ON attribute_name")); // Should fail due to invalid type
-        assertFalse(Parser.handleObjective("INVALID HETEROGENEOUS ON attribute_name")); // Should fail due to invalid keyword
-        assertFalse(Parser.handleObjective("OBJECTIVE HETEROGENEOUS INVALID")); // Should fail due to missing attribute
-        assertFalse(Parser.handleObjective("INVALID")); // Should fail due to invalid structure
+        // Invalid OBJECTIVE cases
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleObjective("OBJECTIVE COMPACT ON another attribute");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleObjective("OBJECTIVE INVALID ON attribute_name");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleObjective("INVALID HETEROGENEOUS ON attribute_name");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleObjective("OBJECTIVE HETEROGENEOUS INVALID");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleObjective("INVALID");
+        });
     }
 
     @Test
     public void testHandleBoundsClause() {
-        assertTrue(Parser.handleBoundsClause("5 < SUM < 10 ON attribute_name"));
-        assertTrue(Parser.handleBoundsClause("15 <= AVG <= 20 ON another_attribute"));
-        assertTrue(Parser.handleBoundsClause("11,000 < SUM < 20,000 ON population"));
-        assertTrue(Parser.handleBoundsClause("500 <= MIN ON population"));
+        // Valid BOUNDS CLAUSE cases
+        try {
+            assertTrue(Parser.handleBoundsClause("5 < SUM < 10 ON attribute_name"));
+            assertTrue(Parser.handleBoundsClause("15 <= AVG <= 20 ON another_attribute"));
+            assertTrue(Parser.handleBoundsClause("11,000 < SUM < 20,000 ON population"));
+            assertTrue(Parser.handleBoundsClause("500 <= MIN ON population"));
+        } catch (InvalidRSqlSyntaxException e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
 
-
-        assertFalse(Parser.handleBoundsClause("notadigit <= AVG <= 20 ON another_attribute"));
-        assertFalse(Parser.handleBoundsClause("Invalid bounds clause"));
-        assertFalse(Parser.handleBoundsClause("10 < INVALID < 20 ON invalid_attribute"));
+        // Invalid BOUNDS CLAUSE cases
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleBoundsClause("notadigit <= AVG <= 20 ON another_attribute");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleBoundsClause("Invalid bounds clause");
+        });
+        assertThrows(InvalidRSqlSyntaxException.class, () -> {
+            Parser.handleBoundsClause("10 < INVALID < 20 ON invalid_attribute");
+        });
     }
+
 
     @Test
     public void testValidQuery() throws InvalidRSqlSyntaxException {

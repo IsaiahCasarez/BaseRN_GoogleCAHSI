@@ -19,7 +19,6 @@ OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name,
 public class Parser {
     QuerySpecifics queryInformation;
 
-
     public static MainClauseType determineMainClauseType(String clause) {
         String trimmedClause = clause.trim().toUpperCase();
 
@@ -36,28 +35,36 @@ public class Parser {
         }
     }
 
-
-    //space and CASE sensitive right now, could be improved in the future
-    public static boolean validateSelect(String selectSubstring) {
+    public static boolean validateSelect(String selectSubstring) throws InvalidRSqlSyntaxException {
         String regex = "^SELECT REGIONS(?:, REGIONS\\.p|, REGIONS\\.HET)?";
-        return selectSubstring.matches(regex);
-    }
 
-    public static boolean validateOrderByClause(String OrderBySubstring) {
-        String regex = "^ORDER BY (HET|CARD) (ASC|DESC)$";
-        //queryInformation.setORDERTYPE();
-        return OrderBySubstring.trim().matches(regex);
-    }
-
-    public static boolean validateFromClause(String FromClauseSubStr) {
-        String regex = "^FROM\\s.*$";
-        //should only be two words
-        if (FromClauseSubStr.trim().split(" ").length == 2) {
-            return FromClauseSubStr.trim().matches(regex);
+        if (!selectSubstring.matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid SELECT syntax: " + selectSubstring);
         }
-        return false;
 
+        return true;
     }
+
+    public static boolean validateOrderByClause(String OrderBySubstring) throws InvalidRSqlSyntaxException {
+        String regex = "^ORDER BY (HET|CARD) (ASC|DESC)$";
+
+        if (!OrderBySubstring.trim().matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid ORDER BY syntax: " + OrderBySubstring);
+        }
+
+        return true;
+    }
+
+    public static boolean validateFromClause(String FromClauseSubStr) throws InvalidRSqlSyntaxException {
+        String regex = "^FROM\\s.*$";
+
+        if (FromClauseSubStr.trim().split(" ").length != 2 || !FromClauseSubStr.trim().matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid FROM syntax: " + FromClauseSubStr);
+        }
+
+        return true;
+    }
+
 
     private static boolean handleSubclause(SubclauseType type, String subclause) throws InvalidRSqlSyntaxException{
         boolean subclauseValidationResult = false;
@@ -116,14 +123,15 @@ public class Parser {
         return validWhere;
     }
 
-
-    // Define empty methods for each case
-    public static boolean handleObjective(String subclause) {
+    public static boolean handleObjective(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^\\s*OBJECTIVE\\s+(HETEROGENEOUS|COMPACT)(\\s+ON\\s+[a-zA-Z_][a-zA-Z0-9_]*)?$";
-        return subclause.matches(regex);
+        if (!subclause.matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid OBJECTIVE syntax: " + subclause);
+        }
+        return true;
     }
 
-    public static boolean handleBoundsClause(String subclause) {
+    public static boolean handleBoundsClause(String subclause) throws InvalidRSqlSyntaxException{
         subclause = removeCommasFromNums(subclause);
 
         //this case is really hard and needs some thought
@@ -133,25 +141,36 @@ public class Parser {
 
 
         //500 <= MIN ON population
-        return subclause.matches(regex2) || subclause.matches(regex);
+        if (subclause.matches(regex2) || subclause.matches(regex)) {
+            return true;
+        }
+        throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
     }
 
-
-    public static boolean handleOptimization(String subclause) {
+    public static boolean handleOptimization(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^OPTIMIZATION\\s+(RANDOM|CONNECTED)$";
-
-        return subclause.matches(regex);
+        if (!subclause.matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
+        }
+        return true;
     }
 
-    public static boolean handleGapless(String subclause) {
+    public static boolean handleGapless(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^GAPLESS$";
-        return subclause.trim().matches(regex);
+        if (!subclause.trim().matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid GAPLESS syntax: " + subclause);
+        }
+        return true;
     }
 
-    public static boolean handleHeuristic(String subclause) {
+    public static boolean handleHeuristic(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^HEURISTIC\\s+(MSA|TABU)$";
-        return subclause.matches(regex);
+        if (!subclause.matches(regex)) {
+            throw new InvalidRSqlSyntaxException("Invalid HEURISTIC syntax: " + subclause);
+        }
+        return true;
     }
+
 
     public static boolean handleWhere(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^\\s*WHERE\\s+P\\s*=(\\s*(K|PMAX|\\d+)\\s*)$";
