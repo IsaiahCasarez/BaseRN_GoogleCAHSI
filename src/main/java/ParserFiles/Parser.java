@@ -19,7 +19,10 @@ OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name,
 public class Parser {
     QuerySpecifics queryInformation;
 
-    public static MainClauseType determineMainClauseType(String clause) {
+    public Parser() {
+        this.queryInformation = new QuerySpecifics();
+    }
+    public  MainClauseType determineMainClauseType(String clause) {
         String trimmedClause = clause.trim().toUpperCase();
 
         if (trimmedClause.startsWith("SELECT")) {
@@ -35,7 +38,7 @@ public class Parser {
         }
     }
 
-    public static boolean validateSelect(String selectSubstring) throws InvalidRSqlSyntaxException {
+    public  boolean validateSelect(String selectSubstring) throws InvalidRSqlSyntaxException {
         String regex = "^SELECT REGIONS(?:, REGIONS\\.p|, REGIONS\\.HET)?";
 
         if (!selectSubstring.matches(regex)) {
@@ -45,7 +48,7 @@ public class Parser {
         return true;
     }
 
-    public static boolean validateOrderByClause(String OrderBySubstring) throws InvalidRSqlSyntaxException {
+    public  boolean validateOrderByClause(String OrderBySubstring) throws InvalidRSqlSyntaxException {
         String regex = "^ORDER BY (HET|CARD) (ASC|DESC)$";
 
         if (!OrderBySubstring.trim().matches(regex)) {
@@ -55,7 +58,7 @@ public class Parser {
         return true;
     }
 
-    public static boolean validateFromClause(String FromClauseSubStr) throws InvalidRSqlSyntaxException {
+    public  boolean validateFromClause(String FromClauseSubStr) throws InvalidRSqlSyntaxException {
         String regex = "^FROM\\s.*$";
 
         if (FromClauseSubStr.trim().split(" ").length != 2 || !FromClauseSubStr.trim().matches(regex)) {
@@ -66,7 +69,7 @@ public class Parser {
     }
 
 
-    private static boolean handleSubclause(SubclauseType type, String subclause) throws InvalidRSqlSyntaxException{
+    private  boolean handleSubclause(SubclauseType type, String subclause) throws InvalidRSqlSyntaxException{
         boolean subclauseValidationResult = false;
         subclause = subclause.trim();
         switch (type) {
@@ -98,7 +101,7 @@ public class Parser {
         return subclauseValidationResult;
     }
 
-    private static boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
+    private  boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
         whereSubstring = removeCommasFromNums(whereSubstring);
         String[] subclausesArr = whereSubstring.split(",");
 
@@ -123,7 +126,7 @@ public class Parser {
         return validWhere;
     }
 
-    public static boolean handleObjective(String subclause) throws InvalidRSqlSyntaxException {
+    public  boolean handleObjective(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^\\s*OBJECTIVE\\s+(HETEROGENEOUS|COMPACT)(\\s+ON\\s+[a-zA-Z_][a-zA-Z0-9_]*)?$";
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid OBJECTIVE syntax: " + subclause);
@@ -131,7 +134,7 @@ public class Parser {
         return true;
     }
 
-    public static boolean handleBoundsClause(String subclause) throws InvalidRSqlSyntaxException{
+    public  boolean handleBoundsClause(String subclause) throws InvalidRSqlSyntaxException{
         subclause = removeCommasFromNums(subclause);
 
         //this case is really hard and needs some thought
@@ -147,7 +150,7 @@ public class Parser {
         throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
     }
 
-    public static boolean handleOptimization(String subclause) throws InvalidRSqlSyntaxException {
+    public  boolean handleOptimization(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^OPTIMIZATION\\s+(RANDOM|CONNECTED)$";
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
@@ -155,7 +158,7 @@ public class Parser {
         return true;
     }
 
-    public static boolean handleGapless(String subclause) throws InvalidRSqlSyntaxException {
+    public  boolean handleGapless(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^GAPLESS$";
         if (!subclause.trim().matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid GAPLESS syntax: " + subclause);
@@ -163,7 +166,7 @@ public class Parser {
         return true;
     }
 
-    public static boolean handleHeuristic(String subclause) throws InvalidRSqlSyntaxException {
+    public  boolean handleHeuristic(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^HEURISTIC\\s+(MSA|TABU)$";
         if (!subclause.matches(regex)) {
             throw new InvalidRSqlSyntaxException("Invalid HEURISTIC syntax: " + subclause);
@@ -172,7 +175,7 @@ public class Parser {
     }
 
 
-    public static boolean handleWhere(String subclause) throws InvalidRSqlSyntaxException {
+    public  boolean handleWhere(String subclause) throws InvalidRSqlSyntaxException {
         String regex = "^\\s*WHERE\\s+P\\s*=(\\s*(K|PMAX|\\d+)\\s*)$";
         boolean isValid = subclause.trim().toUpperCase().matches(regex);
 
@@ -185,14 +188,14 @@ public class Parser {
 
 
     //So that 10,000 -> 10000, way easier to then parse the subclauses by strings
-    public static String removeCommasFromNums(String strToClean) {
+    public  String removeCommasFromNums(String strToClean) {
         String regex = "(?<=[\\d])(,)(?=[\\d])";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(strToClean);
         return m.replaceAll("");
     }
 
-    public static SubclauseType determineSubclauseType(String subclause) {
+    public  SubclauseType determineSubclauseType(String subclause) {
         subclause = subclause.trim();
         if (subclause.matches("^OBJECTIVE.*")) {
             return SubclauseType.OBJECTIVE;
@@ -212,7 +215,9 @@ public class Parser {
         }
     }
 
-    public static boolean validateQuery(String query) throws InvalidRSqlSyntaxException {
+    public boolean validateQuery(String query) throws InvalidRSqlSyntaxException {
+       this.queryInformation = new QuerySpecifics();
+
         boolean hasSelect = false;
         boolean hasFrom = false;
         boolean hasWhere = false;
@@ -261,9 +266,9 @@ public class Parser {
     }
 
 
-
-
     public static void main(String[] args) throws InvalidRSqlSyntaxException {
+
+        Parser parser = new Parser();
 
         String validQuery = "SELECT REGIONS;"
                 + " ORDER BY HET DESC;"
@@ -277,9 +282,7 @@ public class Parser {
                 + " ORDER BY HET DESC;"
                 + " FROM US_counties;";
 
-
-//        ParserFiles.QuerySpecifics queryInformation = new ParserFiles.QuerySpecifics();
-      //  System.out.println(validQuery(invalid));
+       System.out.println(parser.validateQuery(validQuery));
     }
 }
 
