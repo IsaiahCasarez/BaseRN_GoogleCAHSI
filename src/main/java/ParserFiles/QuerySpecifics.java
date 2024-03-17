@@ -105,25 +105,25 @@ public class QuerySpecifics {
     }
 
     public String printingBounds(ArrayList<BoundsSubclause> boundsClauses) {
-        String s = "";
+        StringBuilder s = new StringBuilder();
         if (boundsClauses != null) {
             int i = 1;
             for (BoundsSubclause clause : boundsClauses) {
-                s += "For the " + i + "bound clause attributes: " + "\n";
+                s.append("For the bound clause number: ").append(i).append(" attributes: ").append("\n");
 
-                s += "Agg Function: " + clause.getAggFunction() + "\n";
-                s += "UpperBound: " + clause.getUpperBound() + "\n";
-                s += "UpperBound Attribute: " + clause.getUpperBoundAttribute() + "\n";
-                s += "LowerBound: " + clause.getLowerBound() + "\n";
-                s += "comparisonOperator1: " + clause.getComparisonOperator1() + "\n";
-                s += "comparisonOperator2: " + clause.getComparisonOperator2() + "\n";
+                s.append("Agg Function: ").append(clause.getAggFunction()).append("\n");
+                s.append("UpperBound: ").append(clause.getUpperBound()).append("\n");
+                s.append("UpperBound Attribute: ").append(clause.getUpperBoundAttribute()).append("\n");
+                s.append("LowerBound: ").append(clause.getLowerBound()).append("\n");
+                s.append("comparisonOperator1: ").append(clause.getComparisonOperator1()).append("\n");
+                s.append("comparisonOperator2: ").append(clause.getComparisonOperator2()).append("\n");
                 i++;
             }
         }
         else {
-            s += "There are no bounds clauses";
+            s.append("There are no bounds clauses");
         }
-        return s;
+        return s.toString();
     }
 
 
@@ -175,20 +175,12 @@ public class QuerySpecifics {
 
     public void parseORDERBYMore(String orderTypeString) throws InvalidRSqlSyntaxException {
         switch (orderTypeString) {
-            case "HET":
-                this.setORDERTYPE(ORDERTYPE.HET);
-                break;
-            case "CARD":
-                this.setORDERTYPE(ORDERTYPE.CARD);
-                break;
-            case "ASC":
-                this.setORDERDIRECTION(OrderDirection.ASC);
-                break;
-            case "DESC":
-                this.setORDERDIRECTION(OrderDirection.DESC);
-                break;
-            default:
-                throw new InvalidRSqlSyntaxException("Select ORDER Type or Driection did not match one of four:  (HET | CARD) [(ASC | DESC): " + orderTypeString);
+            case "HET" -> this.setORDERTYPE(ORDERTYPE.HET);
+            case "CARD" -> this.setORDERTYPE(ORDERTYPE.CARD);
+            case "ASC" -> this.setORDERDIRECTION(OrderDirection.ASC);
+            case "DESC" -> this.setORDERDIRECTION(OrderDirection.DESC);
+            default ->
+                    throw new InvalidRSqlSyntaxException("Select ORDER Type or Driection did not match one of four:  (HET | CARD) [(ASC | DESC): " + orderTypeString);
         }
         ;
     }
@@ -199,21 +191,19 @@ public class QuerySpecifics {
 
         switch (numWords) {
             //no optional arguments given
-            case 2:
+            case 2 -> {
                 this.setORDERDIRECTION(null);
                 this.setORDERTYPE(null);
-                break;
+            }
             //last word we parse
-            case 3:
-                parseORDERBYMore(words[2]);
-                break;
+            case 3 -> parseORDERBYMore(words[2]);
+
             //last two words we parse
-            case 4:
+            case 4 -> {
                 parseORDERBYMore(words[2]);
                 parseORDERBYMore(words[3]);
-                break;
-            default:
-                throw new InvalidRSqlSyntaxException("Invalid RSQL syntax: " + s);
+            }
+            default -> throw new InvalidRSqlSyntaxException("Invalid RSQL syntax: " + s);
         }
     }
 
@@ -227,14 +217,9 @@ public class QuerySpecifics {
         String heuristic = words[1];
 
         switch (heuristic) {
-            case "MSA":
-                this.setHeuristicType(Heuristic.MSA);
-                break;
-            case "TABU":
-                this.setHeuristicType(Heuristic.TABU);
-                break;
-            default:
-                throw new InvalidRSqlSyntaxException("Invalid HEURISTIC: " + heuristic);
+            case "MSA" -> this.setHeuristicType(Heuristic.MSA);
+            case "TABU" -> this.setHeuristicType(Heuristic.TABU);
+            default -> throw new InvalidRSqlSyntaxException("Invalid HEURISTIC: " + heuristic);
         }
     }
 
@@ -248,14 +233,9 @@ public class QuerySpecifics {
         if (words.length == 2) {
             String heuristic = words[1];
             switch (heuristic) {
-                case "RANDOM":
-                    this.setOptimizationType(Optimization.RANDOM);
-                    break;
-                case "CONNECTED":
-                    this.setOptimizationType(Optimization.CONNECTED);
-                    break;
-                default:
-                    throw new InvalidRSqlSyntaxException("Invalid HEURISTIC: " + heuristic);
+                case "RANDOM" -> this.setOptimizationType(Optimization.RANDOM);
+                case "CONNECTED" -> this.setOptimizationType(Optimization.CONNECTED);
+                default -> throw new InvalidRSqlSyntaxException("Invalid HEURISTIC: " + heuristic);
             }
         }
     }
@@ -271,14 +251,10 @@ public class QuerySpecifics {
         switch (words.length) {
             case 2:
                 switch (words[1]) {
-                    case "HETEROGENEOUS":
-                        setObjectiveType(Objective.HETEROGENEOUS);
-                        break;
-                    case "COMPACT":
-                        setObjectiveType(Objective.COMPACT);
-                        break;
-                    default:
-                        throw new InvalidRSqlSyntaxException("Invalid Objective TYPE, must be either HETEROGENEOUS or COMPACT: " + words[1]);
+                    case "HETEROGENEOUS" -> setObjectiveType(Objective.HETEROGENEOUS);
+                    case "COMPACT" -> setObjectiveType(Objective.COMPACT);
+                    default ->
+                            throw new InvalidRSqlSyntaxException("Invalid Objective TYPE, must be either HETEROGENEOUS or COMPACT: " + words[1]);
                 }
                 setObjectiveAttribute(null);
                 break;
@@ -289,14 +265,10 @@ public class QuerySpecifics {
             case 4:
                 setObjectiveAttribute(words[3]);
                 switch (words[1]) {
-                    case "HETEROGENEOUS":
-                        setObjectiveType(Objective.HETEROGENEOUS);
-                        break;
-                    case "COMPACT":
-                        setObjectiveType(Objective.COMPACT);
-                        break;
-                    default:
-                        throw new InvalidRSqlSyntaxException("Invalid Objective TYPE, must be either HETEROGENEOUS or COMPACT: " + words[1]);
+                    case "HETEROGENEOUS" -> setObjectiveType(Objective.HETEROGENEOUS);
+                    case "COMPACT" -> setObjectiveType(Objective.COMPACT);
+                    default ->
+                            throw new InvalidRSqlSyntaxException("Invalid Objective TYPE, must be either HETEROGENEOUS or COMPACT: " + words[1]);
                 }
                 break;
         }
@@ -319,9 +291,61 @@ public class QuerySpecifics {
 
     }
 
+    //500 <= MIN ON population
+    public void parseBoundsNoUpper(String s) throws InvalidRSqlSyntaxException {
+
+        String[] words = s.trim().split("\\s+");
+        if (words.length != 5) {
+            throw new InvalidRSqlSyntaxException("Invalid bounds clause based on number of args" + s);
+        }
+        BoundsSubclause boundsclause = new BoundsSubclause();
+        boundsclause.setLowerBound(Double.parseDouble(words[0]));
+        boundsclause.setComparisonOperator1(words[1]);
+        AssignAggFn(words, boundsclause);
+        boundsclause.setUpperBoundAttribute(words[4]);
+        if (this.boundsSubclauses == null) {
+            boundsSubclauses = new ArrayList<BoundsSubclause>();
+        }
+        this.boundsSubclauses.add(boundsclause);
+    }
+
+    //11000 < SUM < 20000 ON population
+    public void parseBoundsWithUpper(String s) throws InvalidRSqlSyntaxException {
+
+        String[] words = s.trim().split("\\s+");
+        if (words.length != 7) {
+            throw new InvalidRSqlSyntaxException("Invalid bounds clause must have 7 words seprated by space" + s);
+        }
+        BoundsSubclause boundsclause = new BoundsSubclause();
+
+        boundsclause.setLowerBound(Double.parseDouble(words[0]));
+        boundsclause.setUpperBound(Double.parseDouble(words[4]));
+        boundsclause.setUpperBoundAttribute(words[6]);
+
+        boundsclause.setComparisonOperator1(words[1]);
+        boundsclause.setComparisonOperator2(words[3]);
+
+        AssignAggFn(words, boundsclause);
+        if (this.boundsSubclauses == null) {
+            boundsSubclauses = new ArrayList<BoundsSubclause>();
+        }
+        this.boundsSubclauses.add(boundsclause);
+    }
+
+    private void AssignAggFn(String[] words, BoundsSubclause boundsclause) throws InvalidRSqlSyntaxException {
+        switch (words[2]) {
+            case "MIN" -> boundsclause.setAggFunction(Aggregate.MIN);
+            case "SUM" -> boundsclause.setAggFunction(Aggregate.SUM);
+            case "MAX" -> boundsclause.setAggFunction(Aggregate.MAX);
+            case "COUNT" -> boundsclause.setAggFunction(Aggregate.COUNT);
+            case "AVG" -> boundsclause.setAggFunction(Aggregate.AVG);
+            default ->
+                    throw new InvalidRSqlSyntaxException("Invalid AGG fuinction only allowing (SUM | MIN | MAX | COUNT | AVG): " + words[2]);
+        }
+    }
 
 
-        public static void main(String[] args){
+    public static void main(String[] args){
             QuerySpecifics spec = new QuerySpecifics();
             System.out.println(spec.toString());
         }

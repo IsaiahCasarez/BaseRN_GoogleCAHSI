@@ -1,28 +1,88 @@
 package ParserFiles;
-
 import java.util.regex.*;
 import static ParserFiles.QueryEnums.*;
-//Template for the Query Syntax
-/**
-SELECT REGIONS, [REGIONS.p, REGIONS.HET];
-[ORDER BY (HET | CARD) [(ASC | DESC)];]
-FROM (dataset_name | path);
-WHERE p = (k | 𝑝𝑀𝐴𝑋 ),
-OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name,
-[lower_bound (< | <=) (SUM | MIN | MAX | COUNT | AVG)
-(< | <=) upper_bound ON attribute_name],
-[OPTIMIZATION (RANDOM | CONNECTED)],
-[GAPLESS],
-[HEURISTIC (MSA | TABU)];
-**/
-
+//TODO: README USER Manual. Author: John Pateros -> jpateros5410@sdsu.edu
+/*
+Overview: This is an RSQL syntax validator and Parser. The input is a string representing a query and the output is if the syntax is valid and the parsed query information:
+TODO: HOW TO USE
+In the main method below generate your specified query as a string and then call factory method: validateQueryPrintSpecifics(String Query)
+- NOTE: The way this is implemented is that it will ALWAYS throw and exception if there is an issue with the syntax,
+    -The Exceptions messages are quite specific so it should be easy to find the source of the code that is wrong, ctrl-f that message to find the code
+    -Calling this method with a string that is invalid on purpose is ok and is expected, the exception will be caught error message printed and execution continues
+General Implementation Notes:
+    -Implementation heavily depends on parsing based on seperating clauses into subclauses and vaidating/parsing them with regex
+TODO: Fix/improve the following assumptions
+    -NOTE: Not using Semicolons to seperate statements like SELECT, ORDER BY, FROM will break this!
+    -NOTE: Not using spaces between contents of a subclause like 11,000<SUM<20,000 instead of 11,000 < SUM < 20,000 will break this (hard coded parsing)
+    -NOTE: There is an implicit issue since there can be any number of bounds sub clauses
+        Like i can say 11,000 < SUM < 20,000 ON population, 500 <= MIN ON population, in one query
+        -right now this is being handled and you can use as many as you want but i would like to dtermine the exact number of these clauses in the future for extra validation
+    -NOTE: I am sure there are more bugs/edge cases I am not addressing feel free to give me an input and expected output and i will try to fix
+    -NOTE: If you want to validate a specific method or subsection validaiton part see the junit unit tests (ParserTest.java) as this is how i built through testing as i went
+More in Depth Implementation Details for those that are interested:
+Everything starts from validateQuery which returns a boolean true or will throw an exception if not valid
+    -this first ensures there are between 3-4 statements seperated by semicolon since ORDERBY is optional
+    -next it will call determineMainClauseType for each clause to using regex classify it as
+            -SELECT, ORDERBY, FROM or WHERE with an enum (if it cant will throw an unrecognized error, will throw an error as soon as ther is problem)
+            -Based on the mainclause type i use a switch case to call the right handler method
+    -Handler Methods: one per each main clause so 4 of them. They will generally use regex to validate the syntax if they can not validate the syntax
+        they will throw an error. Otherwise if its valid it will forward the the string to the QuerySpecifics class to parse the fields
+            -Parsing the fields right now depends mostly on spaces and knowing indexes could be improved in the future
+    -HandleWhereClause: this validation is tricky since it has a lot of potential subcomponents
+        -This will break the where clause into smaller subclauses by parsing by comma before it will then validate/parse each subclass in a similar fashion
+Note: I know this is quite messy and not the best code practices was planning on getting that part straightened out later
+ */
 public class Parser {
     QuerySpecifics queryInformation;
-
     public Parser() {
         this.queryInformation = new QuerySpecifics();
     }
-    public  MainClauseType determineMainClauseType(String clause) {
+    public static void main(String[] args) throws InvalidRSqlSyntaxException {
+
+        String validQuery = "SELECT REGIONS, REGIONS.p;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;"
+                + " WHERE p=14, GAPLESS,"
+                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
+                + " ON population,"
+                + "OPTIMIZATION RANDOM,"
+                + "HEURISTIC MSA,"
+                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+
+        String validQuery2 = " SELECT REGIONS, REGIONS.p;"
+                + "FROM NYC_census_tracts;"
+                + "WHERE p=pmax ,"
+                + "5000 <= MAX ON population, OBJECTIVE COMPACT,"
+                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+
+        String validQuery3 = " SELECT REGIONS, REGIONS.p;"
+                + " FROM NYC_census_tracts; "
+                + " WHERE p=pmax , "
+                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+                + " OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+
+        String invalid = "SELECT REGIONS;"
+                + " ORDER BY HET DESC;"
+                + " FROM US_counties;";
+
+        validateQueryPrintSpecifics(validQuery);
+        validateQueryPrintSpecifics(validQuery2);
+        validateQueryPrintSpecifics(validQuery3);
+        validateQueryPrintSpecifics(invalid);
+    }
+
+    public static void validateQueryPrintSpecifics(String query) {
+        try {
+            Parser parseQuery = new Parser();
+            System.out.println("Query is valid: " + parseQuery.validateQuery(query) + " with contents of: ");
+            System.out.println(parseQuery.getQueryInfo().toString());
+        }
+        catch (InvalidRSqlSyntaxException e) {
+            System.out.println(e);
+            System.out.println("Query syntax was invalid!!! Error message is above for specific syntax issue ^");
+        }
+    }
+    public  MainClauseType determineMainClauseType(String clause) throws InvalidRSqlSyntaxException {
         String trimmedClause = clause.trim().toUpperCase();
 
         if (trimmedClause.startsWith("SELECT")) {
@@ -34,7 +94,8 @@ public class Parser {
         } else if (trimmedClause.startsWith("WHERE")) {
             return MainClauseType.WHERE;
         } else {
-            return MainClauseType.UNKNOWN;
+            throw new InvalidRSqlSyntaxException("Could not determine the Main clause Type of: " + clause);
+            //return MainClauseType.UNKNOWN;
         }
     }
 
@@ -149,6 +210,12 @@ public class Parser {
         if (!( subclause.matches(regex2) || subclause.matches(regex))) {
             throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
         }
+        if ( subclause.matches(regex2)) {
+            this.queryInformation.parseBoundsNoUpper(subclause);
+        }
+        else if ( subclause.matches(regex)) {
+            this.queryInformation.parseBoundsWithUpper(subclause);
+        }
         return true;
     }
 
@@ -231,13 +298,13 @@ public class Parser {
 
         String[] substringsArr = query.split(";");
 
-        // Ensure there are exactly 3-4 statements separated by semicolons
+        // Ensure there are exactly 3-4 main statements separated by semicolons
         if (substringsArr.length > 4 || substringsArr.length < 3) {
             throw new InvalidRSqlSyntaxException("Wrong number of SQL statements! You might be missing a semicolon?");
         }
 
         for (String clause : substringsArr) {
-            MainClauseType mainClauseType = determineMainClauseType(clause.trim());
+            MainClauseType mainClauseType = determineMainClauseType(clause.trim().toUpperCase());
 
             switch (mainClauseType) {
                 case SELECT:
@@ -282,45 +349,6 @@ public class Parser {
         return this.queryInformation;
     }
 
-    public static void main(String[] args) throws InvalidRSqlSyntaxException {
-
-        Parser parserQuery1 = new Parser();
-
-        String validQuery = "SELECT REGIONS, REGIONS.p;"
-                + " ORDER BY HET DESC;"
-                + " FROM US_counties;"
-                + " WHERE p=14, GAPLESS,"
-                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
-                + " ON population,"
-                + "OPTIMIZATION RANDOM,"
-                + "HEURISTIC MSA,"
-                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
-
-        Parser parserQuery2 = new Parser();
-        String validQuery2 = " SELECT REGIONS, REGIONS.p;"
-                + "FROM NYC_census_tracts;"
-                + "WHERE p=pmax ,"
-                + "5000 <= MAX ON population, OBJECTIVE COMPACT,"
-                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
-
-        Parser invalidQuery = new Parser();
-        String invalid = "SELECT REGIONS;"
-                + " ORDER BY HET DESC;"
-                + " FROM US_counties;";
-
-        System.out.println(validQuery + " is valid: " + parserQuery1.validateQuery(validQuery) + " with contents of: ");
-        System.out.println(parserQuery1.getQueryInfo().toString());
-
-        System.out.println(validQuery2 + " is valid: " + parserQuery2.validateQuery(validQuery2) + " with contents of: ");
-        System.out.println(parserQuery2.getQueryInfo().toString());
-
-       try {
-           invalidQuery.validateQuery(invalid);
-       }
-       catch (InvalidRSqlSyntaxException e) {
-           System.out.println(e);
-       }
-    }
 }
 
 /*
