@@ -1,3 +1,3 @@
 Initial working impmlementatiin for the RegioNinja project:
 
-Parser is almost working for validation of queries need a class and implementation to pass the proper info into planner
+Parser is working for validation and field parsing.
