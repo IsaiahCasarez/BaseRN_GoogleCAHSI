@@ -15,22 +15,41 @@ public class QuerySpecifics {
     private Regions REGIONS; //[REGIONS.p, REGIONS.HET]
     //OrderBy - Optional
     private OrderByType ORDERTYPE; // (HET | CARD)
-
+    //ORDERDirection - optional
     private OrderDirection ORDERDIRECTION; //(ASC | DESC)
     //FROM Mandatory
     private String From; //dataset name or path to the file
     //WHERE
-    private pType pValueEnum;
-    private double pValueDouble;
-    private Objective ObjectiveType; //(HETEROGENEOUS | COMPACT)
-    private String ObjectiveAttribute; // OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name
+    private pType pValueEnum; //mandatory
+    private double pValueDouble; //mandatory
+    private Objective ObjectiveType; //optional (HETEROGENEOUS | COMPACT)
+    private String ObjectiveAttribute; // mandatory: OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name
 
-    private ArrayList<BoundsSubclause> boundsSubclauses;
+    private ArrayList<BoundsSubclause> boundsSubclauses; //optional, but can be multiple
 
-    private Optimization OptimizationType;
-    boolean Gapless;
-    private Heuristic HeuristicType;
+    private Optimization OptimizationType; //optional
+    boolean Gapless; //optional 1 or 0, 0 default
+    private Heuristic HeuristicType; //optional
 
+    // Method to check if all the required fields are not null
+    public boolean checkRequiredFields() throws InvalidRSqlSyntaxException {
+        if (REGIONS == null) {
+            throw new InvalidRSqlSyntaxException("Missing required information of REGIONS");
+        }
+        if (From == null) {
+            throw new InvalidRSqlSyntaxException("Missing required information of From");
+        }
+        if (pValueEnum == null) {
+            throw new InvalidRSqlSyntaxException("Missing required information of pValueEnum");
+        }
+        if (pValueDouble == 0.0) {
+            throw new InvalidRSqlSyntaxException("Missing required information of pValueDouble");
+        }
+        if (ObjectiveType == null) {
+            throw new InvalidRSqlSyntaxException("Missing required information of ObjectiveAttribute");
+        }
+        return true;
+    }
     // Constructor with required fields and default values
 //    public QuerySpecifics(Regions REGIONS, String From, Objective ObjectiveType) {
 //        this(REGIONS, null, null, From, null, 0.0,
@@ -241,7 +260,6 @@ public class QuerySpecifics {
     }
     public void parseObjectiveInfo(String s) throws InvalidRSqlSyntaxException {
         String[] words = s.trim().split("\\s+");
-
         // Check if the number of words is within the valid range
         if (words.length < 2 || words.length > 4) {
             throw new InvalidRSqlSyntaxException("Invalid OBJECTIVE syntax, number of words must be 2-4: " + s);
@@ -277,7 +295,6 @@ public class QuerySpecifics {
     public void parseWhereInformation(String s) throws InvalidRSqlSyntaxException {
         String[] words = s.trim().split("=");
         String digitRegex = "\\d+";
-        // Check if the number of words is within the valid range
 
         if (words[1].matches(digitRegex)) {
             double number = Integer.parseInt(words[1]);
@@ -285,7 +302,6 @@ public class QuerySpecifics {
             this.setPValueEnum(pType.K);
         } else {
             this.setPValueEnum(pType.PMAX);
-            //there is no
             this.setPValueDouble(Double.POSITIVE_INFINITY);
         }
 

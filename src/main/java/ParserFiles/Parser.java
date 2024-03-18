@@ -359,6 +359,7 @@ public class Parser {
         if (!hasWhere) {
             throw new InvalidRSqlSyntaxException("Missing WHERE clause!");
         }
+        this.queryInformation.checkRequiredFields();
 
         return true;
     }

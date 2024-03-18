@@ -5,10 +5,10 @@ import static ParserFiles.QueryEnums.*;
 
 @Data
 public class BoundsSubclause {
-
-    private Double LowerBound; // Use Double instead of double to allow null
+//Data class represnting the parsed inforamtion from a single Bounds subclause
+    private Double LowerBound;
     private Aggregate AggFunction;
-    private Double UpperBound; // Use Double instead of double to allow null
+    private Double UpperBound;
     private String UpperBoundAttribute;
     private String comparisonOperator1;
     private String comparisonOperator2;
