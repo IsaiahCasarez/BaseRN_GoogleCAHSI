@@ -33,9 +33,6 @@ public class QuerySpecifics {
 
     // Method to check if all the required fields are not null
     public boolean checkRequiredFields() throws InvalidRSqlSyntaxException {
-        if (REGIONS == null) {
-            throw new InvalidRSqlSyntaxException("Missing required information of REGIONS");
-        }
         if (From == null) {
             throw new InvalidRSqlSyntaxException("Missing required information of From");
         }
