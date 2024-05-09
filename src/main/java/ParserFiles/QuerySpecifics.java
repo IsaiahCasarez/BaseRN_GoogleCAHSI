@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import static ParserFiles.QueryEnums.*;
 
-//
+
 @Data
 public class QuerySpecifics {
 

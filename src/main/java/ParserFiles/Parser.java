@@ -1,4 +1,5 @@
 package ParserFiles;
+import java.util.Scanner;
 import java.util.regex.*;
 import static ParserFiles.QueryEnums.*;
 //TODO: README USER Manual. Author: John Pateros -> jpateros5410@sdsu.edu
@@ -39,56 +40,75 @@ public class Parser {
     }
     public static void main(String[] args) throws InvalidRSqlSyntaxException {
 
-        String validQuery = "SELECT REGIONS, REGIONS.p;"
-                + " ORDER BY HET DESC;"
-                + " FROM US_counties;"
-                + " WHERE p=14, GAPLESS,"
-                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
-                + " ON population,"
-                + "OPTIMIZATION RANDOM,"
-                + "HEURISTIC MSA,"
-                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+        Scanner scanner = new Scanner(System.in);
 
-        String validQuery2 = " SELECT REGIONS, REGIONS.p;"
-                + "FROM NYC_census_tracts;"
-                + "WHERE p=pmax ,"
-                + "5000 <= MAX ON population, OBJECTIVE COMPACT,"
-                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+        while (true) {
+            System.out.println("Enter a query or 'q' to quit:");
 
-        String validQuery3 = " SELECT REGIONS, REGIONS.p;"
-                + " FROM NYC_census_tracts; "
-                + " WHERE p=pmax , "
-                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
-                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
-        //missing the WHERE
-        String invalid = "SELECT REGIONS;"
-                + " ORDER BY HET DESC;"
-                + " FROM US_counties;";
-        //ORDERBY bad syntax
-        String invalidQuery2 = " SELECT REGIONS, REGIONS.p;"
-                + "ORDER BY HET;"
-                + " FROM NYC_census_tracts; "
-                + " WHERE p=pmax , "
-                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
-                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
-        //no select clause
-        String invalidQuery3 =
-                "ORDER BY HET DESC;"
-                + " FROM NYC_census_tracts; "
-                + " WHERE p=pmax , "
-                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
-                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+            String userInput = scanner.nextLine().trim();
 
-        validateQueryPrintSpecifics(validQuery);
-        validateQueryPrintSpecifics(validQuery2);
-        validateQueryPrintSpecifics(validQuery3);
+            // Check if the user wants to quit
+            if (userInput.equalsIgnoreCase("q") || userInput.equalsIgnoreCase("quit")) {
+                System.out.println("Exiting...");
+                break;
+            }
+            
+            validateQueryPrintSpecifics(userInput);
+        }
 
-        //These will throw exceptions that are then handled and error messages are printed
-        //Note: The unit tests have a lot mor testing for individual clauses this is better to test full query compatiability in main
-        validateQueryPrintSpecifics(invalid);
-        validateQueryPrintSpecifics(invalidQuery2);
-        validateQueryPrintSpecifics(invalidQuery3);
+        scanner.close();
     }
+
+//        String validQuery = "SELECT REGIONS, REGIONS.p;"
+//                + " ORDER BY HET DESC;"
+//                + " FROM US_counties;"
+//                + " WHERE p=14, GAPLESS,"
+//                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
+//                + " ON population,"
+//                + "OPTIMIZATION RANDOM,"
+//                + "HEURISTIC MSA,"
+//                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+//
+//        String validQuery2 = " SELECT REGIONS, REGIONS.p;"
+//                + "FROM NYC_census_tracts;"
+//                + "WHERE p=pmax ,"
+//                + "5000 <= MAX ON population, OBJECTIVE COMPACT,"
+//                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+//
+//        String validQuery3 = " SELECT REGIONS, REGIONS.p;"
+//                + " FROM NYC_census_tracts; "
+//                + " WHERE p=pmax , "
+//                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+//                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+//        //missing the WHERE
+//        String invalid = "SELECT REGIONS;"
+//                + " ORDER BY HET DESC;"
+//                + " FROM US_counties;";
+//        //ORDERBY bad syntax
+//        String invalidQuery2 = " SELECT REGIONS, REGIONS.p;"
+//                + "ORDER BY HET;"
+//                + " FROM NYC_census_tracts; "
+//                + " WHERE p=pmax , "
+//                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+//                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+//        //no select clause
+//        String invalidQuery3 =
+//                "ORDER BY HET DESC;"
+//                + " FROM NYC_census_tracts; "
+//                + " WHERE p=pmax , "
+//                + " 5000 <= MAX ON population, OBJECTIVE COMPACT, "
+//                + " OPTIMIZATION CONNECTED, HEURISTIC TABU; ";
+//
+//        validateQueryPrintSpecifics(validQuery);
+//        validateQueryPrintSpecifics(validQuery2);
+//        validateQueryPrintSpecifics(validQuery3);
+//
+//        //These will throw exceptions that are then handled and error messages are printed
+//        //Note: The unit tests have a lot mor testing for individual clauses this is better to test full query compatiability in main
+//        validateQueryPrintSpecifics(invalid);
+//        validateQueryPrintSpecifics(invalidQuery2);
+//        validateQueryPrintSpecifics(invalidQuery3);
+
 
     public static void validateQueryPrintSpecifics(String query) {
         try {
