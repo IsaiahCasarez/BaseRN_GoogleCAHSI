@@ -1,36 +1,40 @@
 package ExecutorFiles;
 
-import ParserFiles.InvalidRSqlSyntaxException;
-import ParserFiles.Parser;
-import ParserFiles.QuerySpecifics;
-import ParserFiles.QueryEnums;
+import ParserFiles.*;
+
 import java.awt.*;
 import java.util.List;
 import java.util.*;
 
+import static ExecutorFiles.PolygonGraph.printPolygons;
 import static ParserFiles.QueryEnums.pType;
 
 public class Executor {
     public static void main(String[] args) throws InvalidQueryInformation {
         List<Area> areaList = createGridAreas();
+        printPolygons(areaList, "initalSeeds2.png");
 
-        for (Area area : areaList) {
-            System.out.println(area);
-        }
         //set up dummy data for this query (could mock this in the future)
 //        QuerySpecifics dummyQueryData = new QuerySpecifics();
 //        dummyQueryData.setPValueDouble(5.0);
 //        dummyQueryData.setPValueEnum(QueryEnums.pType.K);
         Parser parseQuery = new Parser();
-        String query = "SELECT REGIONS, REGIONS.p;"
-                + " ORDER BY HET DESC;"
-                + " FROM US_counties;"
-                + " WHERE p=4, GAPLESS,"
-                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
-                + " ON population, 5000 <= MAX ON population,"
-                + "OPTIMIZATION RANDOM,"
-                + "HEURISTIC MSA,"
-                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+
+//                String query = "SELECT REGIONS, REGIONS.p;"
+//                + " ORDER BY HET DESC;"
+//                + " FROM US_counties;"
+//                + " WHERE p=14, GAPLESS,"
+//                + " 11,000 < SUM < 20,000 ON population, 500 <= MIN"
+//                + " ON population,"
+//                + "OPTIMIZATION RANDOM,"
+//                + "HEURISTIC MSA,"
+//                + " OBJECTIVE HETEROGENEOUS ON average_house_price;";
+                String query = " SELECT REGIONS, REGIONS.p;"
+                + "FROM NYC_census_tracts;"
+                + "WHERE p=5 ,"
+                + "5000 <= MIN ON population, OBJECTIVE COMPACT,"
+                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+
         try {
             parseQuery.validateQuery(query);
             System.out.println(parseQuery.getQueryInfo().toString());
@@ -40,28 +44,26 @@ public class Executor {
         }
 
 //
-//        Set<Area> seedSet = SeedSelection(areaList, 5, 4, true, dummyQueryData);
-//        for (Area seed: seedSet) {
-//            System.out.println(seed);
-//        }
+        Set<Area> seedSet = SeedSelection(areaList, 5, 4, true, parseQuery.getQueryInfo());
+
     }
 
-    //dummy data to represent a list of areas
-    public static List<Area> createGridAreas() {
+    //dummy data used to represent seeds
+    public static java.util.List<Area> createGridAreas() {
         List<Area> areaList = new ArrayList<>();
 
-        int cellSize = 1;
+        int cellSize = 50;
 
         // Create a 10x10 grid of polygons
         for (int x = 0; x < 10; x++) {
             for (int y = 0; y < 10; y++) {
                 // coordinates for the polygon
-                int[] xCoords = {x, x + cellSize, x + cellSize, x};
-                int[] yCoords = {y, y, y + cellSize, y + cellSize};
+                int[] xCoords = {x * cellSize, (x + 1) * cellSize, (x + 1) * cellSize, x * cellSize};
+                int[] yCoords = {y * cellSize, y * cellSize, (y + 1) * cellSize, (y + 1) * cellSize};
                 Polygon polygon = new Polygon(xCoords, yCoords, 4);
 
-                int minValue = 1000;
-                int maxValue = 1000000;
+                int minValue = 5000;
+                int maxValue = 10000;
                 Random rand = new Random();
 
                 // right now the spatially extensive attribute is the population
@@ -74,6 +76,7 @@ public class Executor {
 
         return areaList;
     }
+
 
     public static double computeEucledianDistance(Area currentSeed, Set<Area> allSeeds) {
         double totalEucledianDistance = 0.0;
@@ -92,22 +95,22 @@ public class Executor {
     }
 
     public static Set<Area> SeedSelection(List<Area> areaList, int pRegions, int mIterations, boolean Scattered, QuerySpecifics querySpecifics) throws InvalidQueryInformation {
-        //initlaize empty set we will fill with our seeds when done
+        //initialize empty set we will fill with our seeds when done
         Set<Area> seedSet = new HashSet<>();
 
-        //if areas do not satisfy the max and min constraint in C then we do not want to add them to our set
+        //if areas do not satisfy the max and min constraint in C then we do not want to add them to our set (value is above max or below min)
         for (Area area : areaList) {
             //TODO: implement tjis function
-            if (satifiesConstraints(area)) {
+            if (satifiesConstraints(area, querySpecifics)) {
                 seedSet.add(area);
             }
         }
 
         if (seedSet.size() < pRegions) {
-            throw new InvalidQueryInformation("The pRegions you specified is greater than the number of valid seed Areas (impossible to meet)");
+            throw new InvalidQueryInformation("The pRegions you specified: " + pRegions + " is greater than the number of valid seed areas: " + seedSet.size());
         }
 
-        //only want to keep p valid regions initially in our set
+        //Srandom = p seed areas selected randomly from S
         if (querySpecifics.getPValueEnum() != pType.PMAX) {
             Random random = new Random();
             while (seedSet.size() > pRegions) {
@@ -116,6 +119,11 @@ public class Executor {
                 seedSet.remove(array[randomIndex]);
             }
         }
+        System.out.println(querySpecifics.getPValueEnum());
+        for (Area cur: seedSet) {
+            System.out.println(seedSet);
+        }
+
 
         //areas are replaced with the areas that are not in S to ensure that the seeds in S are as far away from possible from each other
         if (Scattered) {
@@ -184,8 +192,31 @@ public class Executor {
         return array[randomIndex];
     }
 
-    //TODO: how do i check if they satisfy min or max constraint where would this info be stored / what do i check?
-    public static boolean satifiesConstraints(Area area) {
+    //MAX min contraint for all the seeds as specified by the query user passes in
+    public static boolean satifiesConstraints(Area area, QuerySpecifics queryInfo) {
+
+        for (BoundsSubclause subclause: queryInfo.getBoundsSubclauses()) {
+
+            if (subclause.getAggFunction() == QueryEnums.Aggregate.MIN) {
+                //TODO: making assumption here that we did: 100 <= MIN not MIN >= 100!!
+                //if we are less than the min we are not valid
+                Object spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
+                Double lowerBound = subclause.getLowerBound();
+                if (spatiallyExtensiveAttribute instanceof Number && ((Number) spatiallyExtensiveAttribute).doubleValue() < lowerBound) {
+                    return false;
+                }
+            }
+
+            if (subclause.getAggFunction() == QueryEnums.Aggregate.MAX) {
+                //TODO: making assumption here that we did: 100 <= MAX not MAX >= 100!!
+                //if we are greater than the MAX we are not valid
+                Object spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
+                Double lowerBound = subclause.getLowerBound();
+                if (spatiallyExtensiveAttribute instanceof Number && ((Number) spatiallyExtensiveAttribute).doubleValue() > lowerBound) {
+                    return false;
+                }
+            }
+        }
 
         return true;
     }

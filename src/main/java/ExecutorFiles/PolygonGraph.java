@@ -74,8 +74,14 @@ public class PolygonGraph extends JPanel {
         // Dispose of the graphics object
         g2d.dispose();
 
-        // Save the image to a file
-        File outputFile = new File(imageName); // Adjust filename and extension as needed
+        // Create the directory if it doesn't exist
+        File outputDirectory = new File("outputImages");
+        if (!outputDirectory.exists()) {
+            outputDirectory.mkdirs();
+        }
+
+        // Save the image to a file under the "outputImages" folder
+        File outputFile = new File(outputDirectory, imageName); // Adjust filename and extension as needed
         try {
             ImageIO.write(image, "png", outputFile);
             System.out.println("Image saved to: " + outputFile.getAbsolutePath());
@@ -84,6 +90,7 @@ public class PolygonGraph extends JPanel {
         }
     }
 
+    //dummy data used to represent seeds
     public static java.util.List<Area> createGridAreas() {
         List<Area> areaList = new ArrayList<>();
 

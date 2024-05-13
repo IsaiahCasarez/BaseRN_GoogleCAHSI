@@ -6,6 +6,7 @@ import org.junit.Rule;
 import static org.junit.Assert.*;
 import org.junit.rules.ExpectedException;
 import ParserFiles.*;
+
 public class ParserTest {
 
     //TODO: clean up this logic into seperate submodules, just get the working implementaiton first.
