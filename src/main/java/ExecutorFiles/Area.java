@@ -1,6 +1,6 @@
 package ExecutorFiles;
 
-import java.awt.Polygon;
+import java.awt.*;
 
 public class Area {
     private int identifier;
@@ -14,23 +14,28 @@ public class Area {
     private double dissimilarityAttribute;
 
     private double[] centroid;
-
+    private Color customColor; // Field for CustomColor enum
 
     // Constructor with Polygon geometry
     public Area(int identifier, Polygon geometry, Object spatiallyExtensiveAttribute, double dissimilarityAttribute) {
-        this.identifier = identifier;
-        this.geometry = geometry;
-        this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
-        this.dissimilarityAttribute = dissimilarityAttribute;
-        calculateCentroid();
+        this(identifier, geometry, spatiallyExtensiveAttribute, dissimilarityAttribute, Color.BLUE); // Default color is blue
     }
-
     // Constructor with xPoints and yPoints
     public Area(int identifier, int[] xPoints, int[] yPoints, Object spatiallyExtensiveAttribute, double dissimilarityAttribute) {
         this.identifier = identifier;
         this.geometry = new Polygon(xPoints, yPoints, xPoints.length);
         this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
         this.dissimilarityAttribute = dissimilarityAttribute;
+        calculateCentroid();
+    }
+
+    // Constructor with all parameters
+    public Area(int identifier, Polygon geometry, Object spatiallyExtensiveAttribute, double dissimilarityAttribute, Color customColor) {
+        this.identifier = identifier;
+        this.geometry = geometry;
+        this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
+        this.dissimilarityAttribute = dissimilarityAttribute;
+        this.customColor = customColor;
         calculateCentroid();
     }
 
@@ -112,6 +117,15 @@ public class Area {
     public void setDissimilarityAttribute(double dissimilarityAttribute) {
         this.dissimilarityAttribute = dissimilarityAttribute;
     }
+
+    public Color getCustomColor() {
+        return customColor;
+    }
+
+    public void setCustomColor(Color customColor) {
+        this.customColor = customColor;
+    }
+
 
     @Override
     public String toString() {

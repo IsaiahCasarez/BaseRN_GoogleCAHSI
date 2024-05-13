@@ -41,16 +41,16 @@ public class PolygonGraph extends JPanel {
     public static void main(String[] args) {
         // Create a list of areas using createGridAreas
         List<Area> areaList = createGridAreas();
-        printPolygons(areaList, "initalseeds.png");
+        printPolygons(areaList, "initalseeds.png", "111");
     }
 
-    public static void printPolygons(List<Area> areaList, String imageName) {
-        int panelWidth = 1000;
-        int panelHeight = 1000;
-
+    public static void printPolygons(List<Area> areaList, String imageName, String title) {
+        int panelWidth = 500;
+        int panelHeight = 500;
         // Create a BufferedImage to hold the image
         BufferedImage image = new BufferedImage(panelWidth, panelHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = image.createGraphics();
+
 
         // Fill the background with white
         g2d.setColor(Color.WHITE);
@@ -59,7 +59,7 @@ public class PolygonGraph extends JPanel {
         // Draw each polygon and centroid onto the image
         for (Area area : areaList) {
             // Draw the polygon
-            g2d.setColor(Color.BLUE);
+            g2d.setColor(area.getCustomColor());
             g2d.drawPolygon(area.getPolygon());
 
             // Plot the centroid
@@ -69,8 +69,18 @@ public class PolygonGraph extends JPanel {
             int dotY = (int) (centroid[1] - dotSize / 2); // Y-coordinate of the top-left corner of the dot
             g2d.setColor(Color.RED);
             g2d.fillOval(dotX, dotY, dotSize, dotSize);
+
+            // Print dissimilarity attribute if not null
+            double dissimilarity = area.getDissimilarityAttribute();
+            if (!Double.isNaN(dissimilarity)) {
+                g2d.setColor(Color.BLACK);
+                String dissimilarityString = String.format("%.2f", dissimilarity); // Format to 2 decimal places
+                g2d.drawString(dissimilarityString, dotX + dotSize, dotY + dotSize);
+            }
         }
 
+        g2d.setColor(Color.RED);
+        g2d.drawString(title, 20, 20);
         // Dispose of the graphics object
         g2d.dispose();
 

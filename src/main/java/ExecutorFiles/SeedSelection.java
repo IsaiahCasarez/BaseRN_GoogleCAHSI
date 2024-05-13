@@ -11,14 +11,12 @@ import static ExecutorFiles.PolygonGraph.printPolygons;
 public class SeedSelection {
     public static void main(String[] args) throws InvalidQueryInformation {
         List<Area> areaList = createGridAreas();
-        printPolygons(areaList, "initalRegions.png");
-
 
         Parser parseQuery = new Parser();
 
         String query = " SELECT REGIONS, REGIONS.p;"
                 + "FROM NYC_census_tracts;"
-                + "WHERE p=12 ,"
+                + "WHERE p=5 ,"
                 + "5000 <= MIN ON population, OBJECTIVE COMPACT,"
                 + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
         QuerySpecifics queryInfo = null;
@@ -31,9 +29,8 @@ public class SeedSelection {
             System.out.println(e);
         }
 
-        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 10000, true, parseQuery.getQueryInfo());
-        List<Area> seedList = new ArrayList<>(seedSet);
-        printPolygons(seedList, "selectedSeeds.png");
+        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 10, true, parseQuery.getQueryInfo());
+
     }
 
     //Dummy Data of a 10 by 10 polygons to represent a grid
@@ -81,6 +78,10 @@ public class SeedSelection {
 
         return totalEucledianDistance;
     }
+    public static void createImageOfState(Set<Area> seedSet, String filename, String title) {
+        List<Area> seedList = new ArrayList<>(seedSet);
+        printPolygons(seedList, filename + ".png", title);
+    }
 
     public static Set<Area> SeedSelection(List<Area> areaList, int pRegions, int mIterations, boolean Scattered, QuerySpecifics querySpecifics) throws InvalidQueryInformation {
         //initialize empty set we will fill with our seeds when done
@@ -97,7 +98,10 @@ public class SeedSelection {
             throw new InvalidQueryInformation("The pRegions you specified: " + pRegions + " is greater than the number of valid seed areas: " + seedSet.size());
         }
 
+       // createImageOfState(seedSet, "maxMinfiltered", "inital");
+
         //only choose the seeds if we dont want the max number of seeds
+        double finalSeedsEucledian = 0;
         if (querySpecifics.getPValueEnum() != QueryEnums.pType.PMAX) {
 
             //Srandom = p seed areas selected randomly from S
@@ -108,8 +112,10 @@ public class SeedSelection {
                 seedSet.remove(array[randomIndex]);
             }
 
+            //createImageOfState(seedSet, "firstRandomSeeds", "firstRandomSeeds");
             //areas are replaced with the areas that are not in S to ensure that the seeds in S are as far away from possible from each other
             if (Scattered) {
+
 
                 //S notseeds = S- S random
                 Set<Area> notSeedSet = new HashSet<>(areaList);
@@ -123,42 +129,50 @@ public class SeedSelection {
                     double originalTotalEucleidan = 0;
 
                     //find smallest euclidan distance among all of our seeds in seedSet
-                    for (Area seed: seedSet) {
+                    for (Area seed : seedSet) {
                         double currentEucledian = computeEucledianDistance(seed, seedSet);
                         //for this current seedSet we need to know what the total euldian distance is for all our seeds
                         originalTotalEucleidan += currentEucledian;
+                        seed.setDissimilarityAttribute(currentEucledian);
                         //figure out the seed with the mimnum eucldian distance to all the other seeds
                         if (currentEucledian < minEucledianDistance) {
                             minArea = seed;
                             minEucledianDistance = currentEucledian;
                         }
                     }
+                    minArea.setCustomColor(Color.RED);
 
                     Set<Area> modifiedSeedSet = new HashSet<>(seedSet);
                     Area randomArea = getRandomElement(notSeedSet);
 
+                    createImageOfState(seedSet, "seedSetIteration" + mIterations, "Euclidian " + originalTotalEucleidan);
+
                     //modified Seed set will no be the exact same seed set except remove min eudlidan an
                     modifiedSeedSet.remove(minArea);
                     modifiedSeedSet.add(randomArea);
+                    randomArea.setCustomColor(Color.YELLOW);
 
                     //find out if adding in this random area will improve our seeds!!
                     double newTotalEucledian = 0;
-                    for (Area seed: modifiedSeedSet) {
+                    for (Area seed : modifiedSeedSet) {
                         double currentEucledian = computeEucledianDistance(seed, modifiedSeedSet);
+                        seed.setDissimilarityAttribute(currentEucledian);
                         newTotalEucledian += currentEucledian;
                     }
 
-                    // if arandom improves quality of S
-                    if (newTotalEucledian < originalTotalEucleidan) {
+                    createImageOfState(modifiedSeedSet, "modifiedseedSetIteration" + mIterations, "Euclidian " + newTotalEucledian);
+
+                    // if random improves quality of S
+                    if (newTotalEucledian > originalTotalEucleidan) {
                         //make the seedset equal to the
                         seedSet = modifiedSeedSet;
 
-                        //remove the random area that got added into the
+                        //remove the random area that got added into the seedset
                         notSeedSet.remove(randomArea);
                         ///TODO: ask if i should remove this entirely or put it back into the
-                     //   notSeedSet.add(minArea);
+                        //   notSeedSet.add(minArea);
                     }
-
+                    finalSeedsEucledian = Math.max(newTotalEucledian, originalTotalEucleidan);
                     mIterations--;
                 }
 
@@ -166,7 +180,7 @@ public class SeedSelection {
 
         }
 
-
+        createImageOfState(seedSet, "selectedSeeds.png", "Final Eucledian: " + finalSeedsEucledian);
         return seedSet;
     }
 
