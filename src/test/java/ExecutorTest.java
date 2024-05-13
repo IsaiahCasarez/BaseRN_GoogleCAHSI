@@ -1,5 +1,5 @@
 import ExecutorFiles.Area;
-import ExecutorFiles.Executor;
+import ExecutorFiles.SeedSelection;
 import ParserFiles.InvalidRSqlSyntaxException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,9 +67,9 @@ public class ExecutorTest {
 
         // Perform the test based on the parameters
         if (expectedResult) {
-            assertTrue(Executor.satifiesConstraints(area, queryInfo));
+            assertTrue(SeedSelection.satifiesConstraints(area, queryInfo));
         } else {
-            assertFalse(Executor.satifiesConstraints(area, queryInfo));
+            assertFalse(SeedSelection.satifiesConstraints(area, queryInfo));
         }
     }
 
@@ -100,9 +100,9 @@ public class ExecutorTest {
 
         // Perform the test based on the parameters
         if (expectedResult) {
-            assertTrue(Executor.satifiesConstraints(area, queryInfo));
+            assertTrue(SeedSelection.satifiesConstraints(area, queryInfo));
         } else {
-            assertFalse(Executor.satifiesConstraints(area, queryInfo));
+            assertFalse(SeedSelection.satifiesConstraints(area, queryInfo));
         }
     }
 
