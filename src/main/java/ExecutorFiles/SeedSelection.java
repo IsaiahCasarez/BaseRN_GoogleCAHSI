@@ -18,20 +18,20 @@ public class SeedSelection {
 
         String query = " SELECT REGIONS, REGIONS.p;"
                 + "FROM NYC_census_tracts;"
-                + "WHERE p=7 ,"
+                + "WHERE p=12 ,"
                 + "5000 <= MIN ON population, OBJECTIVE COMPACT,"
                 + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
-
+        QuerySpecifics queryInfo = null;
         try {
             parseQuery.validateQuery(query);
-            System.out.println(parseQuery.getQueryInfo().toString());
+            queryInfo = parseQuery.getQueryInfo();
+            System.out.println(queryInfo.toString());
         }
         catch (InvalidRSqlSyntaxException e) {
             System.out.println(e);
         }
 
-
-        Set<Area> seedSet = SeedSelection(areaList, 5, 4, true, parseQuery.getQueryInfo());
+        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 10000, true, parseQuery.getQueryInfo());
         List<Area> seedList = new ArrayList<>(seedSet);
         printPolygons(seedList, "selectedSeeds.png");
     }
@@ -88,7 +88,6 @@ public class SeedSelection {
 
         //if areas do not satisfy the max and min constraint in C then we do not want to add them to our set (value is above max or below min)
         for (Area area : areaList) {
-            //TODO: implement tjis function
             if (satifiesConstraints(area, querySpecifics)) {
                 seedSet.add(area);
             }
@@ -98,74 +97,80 @@ public class SeedSelection {
             throw new InvalidQueryInformation("The pRegions you specified: " + pRegions + " is greater than the number of valid seed areas: " + seedSet.size());
         }
 
-        //Srandom = p seed areas selected randomly from S
+        //only choose the seeds if we dont want the max number of seeds
         if (querySpecifics.getPValueEnum() != QueryEnums.pType.PMAX) {
+
+            //Srandom = p seed areas selected randomly from S
             Random random = new Random();
             while (seedSet.size() > pRegions) {
                 int randomIndex = random.nextInt(seedSet.size());
                 Area[] array = seedSet.toArray(new Area[0]);
                 seedSet.remove(array[randomIndex]);
             }
-        }
 
-        //areas are replaced with the areas that are not in S to ensure that the seeds in S are as far away from possible from each other
-        if (Scattered) {
-            //S notseeds = S- S random
-            Set<Area> notSeedSet = new HashSet<>(areaList);
-            notSeedSet.removeAll(seedSet);
+            //areas are replaced with the areas that are not in S to ensure that the seeds in S are as far away from possible from each other
+            if (Scattered) {
 
-            //the area is initialized to a
-            Area minArea = getRandomElement(seedSet);
-            double minEucledianDistance = Double.NEGATIVE_INFINITY;
+                //S notseeds = S- S random
+                Set<Area> notSeedSet = new HashSet<>(areaList);
+                notSeedSet.removeAll(seedSet);
 
+                while (mIterations > 0) {
 
-            while (mIterations > 0) {
+                    //initlize our minAre and eudlidan distance in the seedSet to be invalid
+                    Area minArea = null;
+                    double minEucledianDistance = Double.POSITIVE_INFINITY;
+                    double originalTotalEucleidan = 0;
 
-                double originalTotalEucleidan = 0;
-                //find smallest euclidan distance among all seeds
-                for (Area seed: seedSet) {
-                    double currentEucledian = computeEucledianDistance(seed, seedSet);
-                    originalTotalEucleidan += currentEucledian;
-                    if (currentEucledian < minEucledianDistance) {
-                        minArea = seed;
-                        minEucledianDistance = currentEucledian;
+                    //find smallest euclidan distance among all of our seeds in seedSet
+                    for (Area seed: seedSet) {
+                        double currentEucledian = computeEucledianDistance(seed, seedSet);
+                        //for this current seedSet we need to know what the total euldian distance is for all our seeds
+                        originalTotalEucleidan += currentEucledian;
+                        //figure out the seed with the mimnum eucldian distance to all the other seeds
+                        if (currentEucledian < minEucledianDistance) {
+                            minArea = seed;
+                            minEucledianDistance = currentEucledian;
+                        }
                     }
-                }
 
-                Set<Area> modifiedSeedSet = new HashSet<>(seedSet);
-                Area randomArea = getRandomElement(notSeedSet);
+                    Set<Area> modifiedSeedSet = new HashSet<>(seedSet);
+                    Area randomArea = getRandomElement(notSeedSet);
 
-                //replace one of the areas and see if it improves
-                modifiedSeedSet.remove(minArea);
-                modifiedSeedSet.add(randomArea);
+                    //modified Seed set will no be the exact same seed set except remove min eudlidan an
+                    modifiedSeedSet.remove(minArea);
+                    modifiedSeedSet.add(randomArea);
 
-                Area copiedMinArea = getRandomElement(modifiedSeedSet);
-                double newMinEucledianDistance = Double.NEGATIVE_INFINITY;
-                double newTotalEucledian = 0;
-
-                for (Area seed: modifiedSeedSet) {
-                    double currentEucledian = computeEucledianDistance(seed, modifiedSeedSet);
-                    newTotalEucledian += currentEucledian;
-
-                    if (currentEucledian < minEucledianDistance) {
-                        copiedMinArea = seed;
-                        newMinEucledianDistance = currentEucledian;
+                    //find out if adding in this random area will improve our seeds!!
+                    double newTotalEucledian = 0;
+                    for (Area seed: modifiedSeedSet) {
+                        double currentEucledian = computeEucledianDistance(seed, modifiedSeedSet);
+                        newTotalEucledian += currentEucledian;
                     }
+
+                    // if arandom improves quality of S
+                    if (newTotalEucledian < originalTotalEucleidan) {
+                        //make the seedset equal to the
+                        seedSet = modifiedSeedSet;
+
+                        //remove the random area that got added into the
+                        notSeedSet.remove(randomArea);
+                        ///TODO: ask if i should remove this entirely or put it back into the
+                     //   notSeedSet.add(minArea);
+                    }
+
+                    mIterations--;
                 }
 
-                if (newTotalEucledian < minEucledianDistance) {
-                    seedSet = modifiedSeedSet;
-                }
-
-
-                mIterations--;
             }
 
         }
 
+
         return seedSet;
     }
 
+    //helper method tp retrive a random element from a set
     public static <T> T getRandomElement(Set<T> set) {
 
         T[] array = (T[]) set.toArray();
