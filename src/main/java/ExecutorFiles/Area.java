@@ -7,7 +7,7 @@ public class Area {
     private Polygon geometry;
     //what is the purpose of this attribute
     //designated on the fly, query tells us this and disimilalirty
-    private Object spatiallyExtensiveAttribute;
+    private double spatiallyExtensiveAttribute;
 
     //How dissikilar one area is from another
     private double dissimilarityAttribute;
@@ -16,11 +16,11 @@ public class Area {
     private Color customColor; // Field for CustomColor enum
 
     // Constructor with Polygon geometry
-    public Area(int identifier, Polygon geometry, Object spatiallyExtensiveAttribute, double dissimilarityAttribute) {
+    public Area(int identifier, Polygon geometry, double spatiallyExtensiveAttribute, double dissimilarityAttribute) {
         this(identifier, geometry, spatiallyExtensiveAttribute, dissimilarityAttribute, Color.BLUE); // Default color is blue
     }
     // Constructor with xPoints and yPoints
-    public Area(int identifier, int[] xPoints, int[] yPoints, Object spatiallyExtensiveAttribute, double dissimilarityAttribute) {
+    public Area(int identifier, int[] xPoints, int[] yPoints, double spatiallyExtensiveAttribute, double dissimilarityAttribute) {
         this.identifier = identifier;
         this.geometry = new Polygon(xPoints, yPoints, xPoints.length);
         this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
@@ -29,7 +29,7 @@ public class Area {
     }
 
     // Constructor with all parameters
-    public Area(int identifier, Polygon geometry, Object spatiallyExtensiveAttribute, double dissimilarityAttribute, Color customColor) {
+    public Area(int identifier, Polygon geometry, double spatiallyExtensiveAttribute, double dissimilarityAttribute, Color customColor) {
         this.identifier = identifier;
         this.geometry = geometry;
         this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
@@ -101,11 +101,11 @@ public class Area {
         this.geometry = geometry;
     }
 
-    public Object getSpatiallyExtensiveAttribute() {
+    public double getSpatiallyExtensiveAttribute() {
         return spatiallyExtensiveAttribute;
     }
 
-    public void setSpatiallyExtensiveAttribute(Object spatiallyExtensiveAttribute) {
+    public void setSpatiallyExtensiveAttribute(double spatiallyExtensiveAttribute) {
         this.spatiallyExtensiveAttribute = spatiallyExtensiveAttribute;
     }
 

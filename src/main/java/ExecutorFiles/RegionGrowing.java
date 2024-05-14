@@ -24,7 +24,7 @@ public class RegionGrowing
 
                 case SUM:
                     for (Area area: neighborhood) {
-                        valOverExtensiveAttributes += (Double)area.getSpatiallyExtensiveAttribute();
+                        valOverExtensiveAttributes += area.getSpatiallyExtensiveAttribute();
                     }
                     break;
                 case MIN:
@@ -38,21 +38,27 @@ public class RegionGrowing
                     break;
                 case AVG:
                     for (Area area: neighborhood) {
-                        valOverExtensiveAttributes += (Double)area.getSpatiallyExtensiveAttribute() / neighborhood.size();
+                        valOverExtensiveAttributes += area.getSpatiallyExtensiveAttribute();
                     }
+                    valOverExtensiveAttributes = valOverExtensiveAttributes / neighborhood.size();
                     break;
                 default:
 
                     break;
             }
-
-            if (!compare(constraint.getLowerBound(), valOverExtensiveAttributes, constraint.getComparisonOperator1().trim())) {
-                return false;
+            if (constraint.getComparisonOperator1() != null) {
+                if (!compare(constraint.getLowerBound(), valOverExtensiveAttributes, constraint.getComparisonOperator1().trim())) {
+                    //current set does not meet the constraints as specified by the query information
+                    return false;
+                }
             }
 
-            if (!compare(valOverExtensiveAttributes, constraint.getUpperBound(), constraint.getComparisonOperator2().trim())) {
-                return false;
+            if (constraint.getComparisonOperator2() != null) {
+                if (!compare(valOverExtensiveAttributes, constraint.getUpperBound(), constraint.getComparisonOperator2().trim())) {
+                    return false;
+                }
             }
+
 
 
         }
@@ -61,7 +67,7 @@ public class RegionGrowing
     }
 
     public static boolean compare(double operand1, double operand2, String operator) {
-
+        System.out.println( + operand1 + " "+ operator + " " + operand2 );
         if (operator == null) {
             // If the comparison operator is null, return true, assuming no constraint is applied
             return true;

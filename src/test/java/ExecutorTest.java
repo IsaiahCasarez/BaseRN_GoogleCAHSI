@@ -1,5 +1,4 @@
-import ExecutorFiles.Area;
-import ExecutorFiles.SeedSelection;
+import ExecutorFiles.*;
 import ParserFiles.InvalidRSqlSyntaxException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,6 +66,36 @@ public class ExecutorTest {
     }
 
     @Test
+    public void testmaintainsAVGConstraints()  {
+        int[] xCoords = {0, 1, 1, 0};
+        int[] yCoords = {0, 1, 1, 0};
+        Polygon polygon = new Polygon(xCoords, yCoords, 4);
+
+        //NOTE: the coordinates are arbitrary only thing that matters is the spatially extensive attribute
+        Set<Area> areaSet = new HashSet<>();
+        for (int i = 1; i <= 5; i++) {
+            areaSet.add(new Area(i, polygon, 1000, 0.0));
+        }
+        String query = " SELECT REGIONS, REGIONS.p;"
+                + "FROM NYC_census_tracts;"
+                + "WHERE p=pmax ,"
+                + "1000 <= AVG ON population OR 1000 < AVG < 2000 ON pop, OBJECTIVE COMPACT,"
+                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
+        QuerySpecifics queryInfo = null;
+        try {
+            parser.validateQuery(query);
+            queryInfo = parser.getQueryInfo();
+            System.out.println(queryInfo.toString());
+        } catch (InvalidRSqlSyntaxException e) {
+            System.out.println(e);
+        }
+
+        assertTrue(RegionGrowing.maintainsConstraints(areaSet, queryInfo));
+
+
+    }
+
+    @Test
     public void testSeedSelection() {
         // Test the SeedSelection method to ensure it selects the correct number of seeds
         // and that the selected seeds satisfy the specified criteria
@@ -89,7 +118,6 @@ public class ExecutorTest {
         try {
             parser.validateQuery(query);
             queryInfo = parser.getQueryInfo();
-            System.out.println(queryInfo.toString());
         } catch (InvalidRSqlSyntaxException e) {
             System.out.println(e);
         }
@@ -122,7 +150,6 @@ public class ExecutorTest {
         try {
             parser.validateQuery(query);
             queryInfo = parser.getQueryInfo();
-            System.out.println(queryInfo.toString());
         } catch (InvalidRSqlSyntaxException e) {
             System.out.println(e);
         }
