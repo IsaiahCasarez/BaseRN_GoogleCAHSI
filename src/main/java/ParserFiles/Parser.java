@@ -183,7 +183,7 @@ public class Parser {
         if (boundClauses.matches(andRegex)) {
 
             this.queryInformation.setBoundsClauselogicalOperator(LogicalOperator.AND);
-            String[] parts = boundClauses.split("\\bAND\\b", 2);
+            String[] parts = boundClauses.split("\\bAND\\b");
 
             for (String part : parts) {
                 if (!part.equalsIgnoreCase("and")) { // Exclude "and"

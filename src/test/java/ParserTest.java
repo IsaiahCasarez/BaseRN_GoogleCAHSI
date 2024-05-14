@@ -301,7 +301,7 @@ public class ParserTest {
         String validQuery4 = "     Select      regions    ; from      us_countries     ; " +
                 " where p=pmax    , objective heterogeneous on house___   ,      gapless    , " +
                 "       optimization random,      heuristic     tabu    , " +
-                "     29    <     max    <    200     on       income    or      20      <     sum     on      population     ; ";
+                "     29    <     max    <    200     on       income    and      20      <     sum     on      population    and  11,000 < SUM < 20,000 ON population ; ";
 
         boolean valid = parser.validateQuery(validQuery);
         assertTrue("Query should be valid", valid);
