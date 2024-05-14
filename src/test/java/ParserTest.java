@@ -8,6 +8,7 @@ import org.junit.rules.ExpectedException;
 import ParserFiles.*;
 
 import java.util.List;
+import java.util.Random;
 
 public class ParserTest {
 
@@ -292,12 +293,24 @@ public class ParserTest {
                 "5000 <= MAX ON population, OBJECTIVE COMPACT," +
                 "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
 
+        String validQuery3 =" Select regions; from US_countries; " +
+                "WHERE p=pmax, OBJECTIVE HETEROGENEOUS on house___, gapless, OPTIMIZATION random, " +
+                "heuristic tabu, 29 < MAX < 200 On income " +
+                "AND 20 < SUM on population; \n";
+        //this spaced out query should still work
+        String validQuery4 = "     Select      regions    ; from      us_countries     ; " +
+                " where p=pmax    , objective heterogeneous on house___   ,      gapless    , " +
+                "       optimization random,      heuristic     tabu    , " +
+                "     29    <     max    <    200     on       income    or      20      <     sum     on      population     ; ";
+
 
         boolean valid = parser.validateQuery(validQuery);
         assertTrue("Query should be valid", valid);
         assertTrue(parser.validateQuery((validQuery2)));
-    }
 
+        assertTrue(parser.validateQuery((validQuery3)));
+       assertTrue(parser.validateQuery(validQuery4));
+    }
 
     @Test(expected = InvalidRSqlSyntaxException.class)
     public void testInvalidQuery() throws InvalidRSqlSyntaxException {

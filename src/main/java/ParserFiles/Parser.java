@@ -380,6 +380,9 @@ public class Parser {
         boolean hasFrom = false;
         boolean hasWhere = false;
 
+        //make a whitespace between the words equal a single space for easier parsing
+        query = query.replaceAll("\\s+", " ");
+        //ensure all the clauses are in all uppercase for when we do the REGEX for easy comparison
         String[] substringsArr = query.trim().toUpperCase().split(";");
 
         // Ensure there are exactly 3-4 main statements separated by semicolons
