@@ -126,9 +126,9 @@ public class QuerySpecifics {
         StringBuilder s = new StringBuilder();
         if (boundsClauses != null) {
             int i = 1;
-            s.append("Bounds Clause Logical Operator: ").append(boundsClauselogicalOperator).append("\n");
+            s.append("Multiple AGG fn Logical Operator: ").append(boundsClauselogicalOperator).append("\n");
             for (BoundsSubclause clause : boundsClauses) {
-                s.append("For the bound clause number: ").append(i).append(" attributes: ").append("\n");
+                s.append("For the AGG fn number: ").append(i).append(" attributes: ").append("\n");
 
                 s.append("Agg Function: ").append(clause.getAggFunction()).append("\n");
                 s.append("UpperBound: ").append(clause.getUpperBound()).append("\n");
@@ -140,7 +140,7 @@ public class QuerySpecifics {
             }
         }
         else {
-            s.append("There are no bounds clauses");
+            s.append("There are AGG fn clauses");
         }
         return s.toString();
     }

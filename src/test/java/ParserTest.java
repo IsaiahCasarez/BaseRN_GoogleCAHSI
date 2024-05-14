@@ -303,7 +303,6 @@ public class ParserTest {
                 "       optimization random,      heuristic     tabu    , " +
                 "     29    <     max    <    200     on       income    or      20      <     sum     on      population     ; ";
 
-
         boolean valid = parser.validateQuery(validQuery);
         assertTrue("Query should be valid", valid);
         assertTrue(parser.validateQuery((validQuery2)));
