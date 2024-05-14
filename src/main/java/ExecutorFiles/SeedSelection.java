@@ -1,11 +1,9 @@
 package ExecutorFiles;
 
 import ParserFiles.*;
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-
 import static ExecutorFiles.PolygonGraph.printPolygons;
 
 public class SeedSelection {
@@ -16,7 +14,7 @@ public class SeedSelection {
 
         String query = " SELECT REGIONS, REGIONS.p;"
                 + "FROM NYC_census_tracts;"
-                + "WHERE p=5 ,"
+                + "WHERE p=10 ,"
                 + "5000 <= MIN ON population, OBJECTIVE COMPACT,"
                 + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
         QuerySpecifics queryInfo = null;
@@ -29,12 +27,12 @@ public class SeedSelection {
             System.out.println(e);
         }
 
-        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 10, true, parseQuery.getQueryInfo());
+        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 50, true, parseQuery.getQueryInfo(), true);
 
     }
 
     //Dummy Data of a 10 by 10 polygons to represent a grid
-    public static java.util.List<Area> createGridAreas() {
+    public static List<Area> createGridAreas() {
         List<Area> areaList = new ArrayList<>();
 
         int cellSize = 50;
@@ -83,7 +81,7 @@ public class SeedSelection {
         printPolygons(seedList, filename + ".png", title);
     }
 
-    public static Set<Area> SeedSelection(List<Area> areaList, int pRegions, int mIterations, boolean Scattered, QuerySpecifics querySpecifics) throws InvalidQueryInformation {
+    public static Set<Area> SeedSelection(List<Area> areaList, int pRegions, int mIterations, boolean Scattered, QuerySpecifics querySpecifics, boolean printDebugImages) throws InvalidQueryInformation {
         //initialize empty set we will fill with our seeds when done
         Set<Area> seedSet = new HashSet<>();
 
@@ -145,8 +143,9 @@ public class SeedSelection {
                     Set<Area> modifiedSeedSet = new HashSet<>(seedSet);
                     Area randomArea = getRandomElement(notSeedSet);
 
-                    createImageOfState(seedSet, "seedSetIteration" + mIterations, "Euclidian " + originalTotalEucleidan);
-
+                    if (printDebugImages) {
+                        createImageOfState(seedSet, "seedSetIteration" + mIterations, "Euclidian " + originalTotalEucleidan);
+                    }
                     //modified Seed set will no be the exact same seed set except remove min eudlidan an
                     modifiedSeedSet.remove(minArea);
                     modifiedSeedSet.add(randomArea);
@@ -160,7 +159,9 @@ public class SeedSelection {
                         newTotalEucledian += currentEucledian;
                     }
 
-                    createImageOfState(modifiedSeedSet, "modifiedseedSetIteration" + mIterations, "Euclidian " + newTotalEucledian);
+                    if (printDebugImages) {
+                        createImageOfState(modifiedSeedSet, "modifiedseedSetIteration" + mIterations, "Euclidian " + newTotalEucledian);
+                    }
 
                     // if random improves quality of S
                     if (newTotalEucledian > originalTotalEucleidan) {
@@ -179,8 +180,9 @@ public class SeedSelection {
             }
 
         }
-
-        createImageOfState(seedSet, "selectedSeeds.png", "Final Eucledian: " + finalSeedsEucledian);
+        if (printDebugImages) {
+            createImageOfState(seedSet, "selectedSeeds.png", "Final Eucledian: " + finalSeedsEucledian);
+        }
         return seedSet;
     }
 

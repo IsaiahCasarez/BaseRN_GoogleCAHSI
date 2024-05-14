@@ -7,6 +7,8 @@ import static org.junit.Assert.*;
 import org.junit.rules.ExpectedException;
 import ParserFiles.*;
 
+import java.util.List;
+
 public class ParserTest {
 
     //TODO: clean up this logic into seperate submodules, just get the working implementaiton first.
@@ -41,6 +43,13 @@ public class ParserTest {
         assertThrows(InvalidRSqlSyntaxException.class, () -> {
             parser.validateSelect("SELECT OTHER, Regions.HET");
         });
+    }
+
+    @Test
+    public void handleBounds() throws InvalidRSqlSyntaxException {
+
+        assertTrue(parser.handleBoundsClause("29 < MAX < 200 ON INCOME"));
+        assertTrue(parser.handleBoundsClause("20 < SUM ON POPULATION"));
     }
 
     @Test
@@ -225,6 +234,22 @@ public class ParserTest {
     }
 
     @Test
+    public void handleMultipleBounds() {
+
+        List<String> subclauses = parser.handleMultipleBounds("29 < MAX < 200 ON INCOME AND 20 < SUM ON POPULATION");
+        assertEquals(subclauses.get(0).trim(), "29 < MAX < 200 ON INCOME");
+        assertEquals(subclauses.get(1).trim(), "20 < SUM ON POPULATION");
+
+        List<String> subclauses2 = parser.handleMultipleBounds("29 < MAX < 200 ON INCOME OR 20 < SUM ON POPULATION");
+        assertEquals(subclauses2.get(0).trim(), "29 < MAX < 200 ON INCOME");
+        assertEquals(subclauses2.get(1).trim(), "20 < SUM ON POPULATION");
+
+        List<String> oneClauseOnly = parser.handleMultipleBounds("29 < MAX < 200 ON INCOME ");
+        assertTrue(oneClauseOnly.isEmpty());
+
+    }
+
+    @Test
     public void testHandleBoundsClause() {
         // Valid BOUNDS CLAUSE cases
         try {
@@ -232,6 +257,8 @@ public class ParserTest {
             assertTrue(parser.handleBoundsClause("15 <= AVG <= 20 ON another_attribute"));
             assertTrue(parser.handleBoundsClause("11,000 < SUM < 20,000 ON population"));
             assertTrue(parser.handleBoundsClause("500 <= MIN ON population"));
+
+            assertTrue(parser.handleBoundsClause(" 29    <    MAX   <     200    ON     INCOME "));
         } catch (InvalidRSqlSyntaxException e) {
             fail("Unexpected exception thrown: " + e.getMessage());
         }

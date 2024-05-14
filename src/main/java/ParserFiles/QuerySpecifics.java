@@ -26,6 +26,7 @@ public class QuerySpecifics {
     private String ObjectiveAttribute; // mandatory: OBJECTIVE (HETEROGENEOUS | COMPACT) ON attribute_name
 
     private ArrayList<BoundsSubclause> boundsSubclauses; //optional, but can be multiple
+    private LogicalOperator boundsClauselogicalOperator; //OPTIONAL will show AND or OR if they are speciifed on the clauses
 
     private Optimization OptimizationType; //optional
     boolean Gapless; //optional 1 or 0, 0 default
@@ -67,6 +68,7 @@ public class QuerySpecifics {
         this.OptimizationType = null;
         this.Gapless = false; // Assuming a default value for boolean
         this.HeuristicType = null;
+        this.boundsClauselogicalOperator = null;
     }
 
 
@@ -124,6 +126,7 @@ public class QuerySpecifics {
         StringBuilder s = new StringBuilder();
         if (boundsClauses != null) {
             int i = 1;
+            s.append("Bounds Clause Logical Operator: ").append(boundsClauselogicalOperator).append("\n");
             for (BoundsSubclause clause : boundsClauses) {
                 s.append("For the bound clause number: ").append(i).append(" attributes: ").append("\n");
 
@@ -314,6 +317,7 @@ public class QuerySpecifics {
         BoundsSubclause boundsclause = new BoundsSubclause();
         boundsclause.setLowerBound(Double.parseDouble(words[0]));
         boundsclause.setComparisonOperator1(words[1]);
+
         AssignAggFn(words, boundsclause);
         boundsclause.setUpperBoundAttribute(words[4]);
         if (this.boundsSubclauses == null) {

@@ -37,6 +37,11 @@ public class QueryEnums {
         COMPACT
     }
 
+    public enum LogicalOperator {
+        AND,
+        OR
+    }
+
     public enum Aggregate {
         SUM,
         MIN,

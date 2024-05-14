@@ -1,5 +1,8 @@
 package ParserFiles;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.regex.*;
 import static ParserFiles.QueryEnums.*;
 //TODO: README USER Manual. Author: John Pateros -> jpateros5410@sdsu.edu
@@ -170,6 +173,39 @@ public class Parser {
         return true;
     }
 
+    public List<String> handleMultipleBounds(String boundClauses) {
+
+        List<String> clauses = new ArrayList<>();
+        String andRegex = ".*\\bAND\\b.*";
+        String orRegex = ".*\\bOR\\b.*";
+
+        //IF there is an AND or an OR in our bounds clauses we need to seperate them
+        if (boundClauses.matches(andRegex)) {
+
+            this.queryInformation.setBoundsClauselogicalOperator(LogicalOperator.AND);
+            String[] parts = boundClauses.split("\\bAND\\b", 2);
+
+            for (String part : parts) {
+                if (!part.equalsIgnoreCase("and")) { // Exclude "and"
+                    clauses.add(part);
+                }
+            }
+        }
+
+        if (boundClauses.matches(orRegex)) {
+            this.queryInformation.setBoundsClauselogicalOperator(LogicalOperator.OR);
+            String[] parts = boundClauses.split("\\bOR\\b");
+
+            for (String part : parts) {
+                if (!part.equalsIgnoreCase("or")) { // Exclude "and"
+                    clauses.add(part);
+                }
+            }
+        }
+
+        return clauses;
+    }
+
 
     private  boolean handleSubclause(SubclauseType type, String subclause) throws InvalidRSqlSyntaxException{
         boolean subclauseValidationResult = false;
@@ -179,7 +215,15 @@ public class Parser {
                 subclauseValidationResult = handleObjective(subclause);
                 break;
             case BOUNDS_CLAUSE:
-                subclauseValidationResult = handleBoundsClause(subclause);
+                List<String> multipleClauses = handleMultipleBounds(subclause);
+                if (!multipleClauses.isEmpty()) {
+                    for (String boundsClause: multipleClauses) {
+                        subclauseValidationResult = handleBoundsClause(boundsClause);
+                    }
+                }
+                else {
+                    subclauseValidationResult = handleBoundsClause(subclause);
+                }
                 break;
             case OPTIMIZATION:
                 subclauseValidationResult = handleOptimization(subclause);
@@ -204,6 +248,7 @@ public class Parser {
     }
 
     private  boolean validateWhereClause(String whereSubstring) throws InvalidRSqlSyntaxException {
+
         whereSubstring = removeCommasFromNums(whereSubstring);
         String[] subclausesArr = whereSubstring.split(",");
 
@@ -238,15 +283,16 @@ public class Parser {
     }
 
     public  boolean handleBoundsClause(String subclause) throws InvalidRSqlSyntaxException{
-        subclause = removeCommasFromNums(subclause);
+        subclause = removeCommasFromNums(subclause).trim();
 
-        //this case is really hard and needs some thought
         //TODO: lower_bound (< | <=) (SUM | MIN | MAX | COUNT | AVG) (< | <=) (upper_bound) ON attribute_name]
         String regex2 = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*ON\\s+[a-zA-Z_]+";
+
+        //one or more digits zero or more whitespace
         String regex = "\\d+\\s*(<|<=)\\s*(SUM|MIN|MAX|COUNT|AVG)\\s*(<|<=)\\s*\\d+\\s*ON\\s+[a-zA-Z_]+";
 
         if (!( subclause.matches(regex2) || subclause.matches(regex))) {
-            throw new InvalidRSqlSyntaxException("Invalid OPTIMIZATION syntax: " + subclause);
+            throw new InvalidRSqlSyntaxException("Invalid Bounds Clause syntax: " + subclause);
         }
         if ( subclause.matches(regex2)) {
             this.queryInformation.parseBoundsNoUpper(subclause);

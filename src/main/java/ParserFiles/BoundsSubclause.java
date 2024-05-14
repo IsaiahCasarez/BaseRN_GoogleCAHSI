@@ -13,6 +13,7 @@ public class BoundsSubclause {
     private String comparisonOperator1;
     private String comparisonOperator2;
 
+
     public BoundsSubclause() {
         this.LowerBound = null;
         this.AggFunction = null;
@@ -20,6 +21,5 @@ public class BoundsSubclause {
         this.UpperBoundAttribute = null;
         this.comparisonOperator1 = null;
         this.comparisonOperator2 = null;
-
     }
 }

@@ -3,16 +3,18 @@ import ExecutorFiles.SeedSelection;
 import ParserFiles.InvalidRSqlSyntaxException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import ParserFiles.*;
 import ParserFiles.Parser;
+
+import static ExecutorFiles.SeedSelection.*;
 import static org.junit.Assert.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import ExecutorFiles.Area;
+
+import java.util.*;
+import java.util.List;
 
 public class ExecutorTest {
 
@@ -29,15 +31,46 @@ public class ExecutorTest {
         // and that each area is correctly initialized
     }
 
+    public static List<Area> createSpoofArea() {
+        List<Area> areaList = new ArrayList<>();
+
+        int cellSize = 50;
+        // Create a 10x10 grid of polygons
+        for (int x = 0; x < 2; x++) {
+            for (int y = 0; y < 2; y++) {
+                // coordinates for the polygon
+                int[] xCoords = {x * cellSize, (x + 1) * cellSize, (x + 1) * cellSize, x * cellSize};
+                int[] yCoords = {y * cellSize, y * cellSize, (y + 1) * cellSize, (y + 1) * cellSize};
+                Polygon polygon = new Polygon(xCoords, yCoords, 4);
+
+                int minValue = 5000;
+                int maxValue = 10000;
+                Random rand = new Random();
+
+                // right now the spatially extensive attribute is the population
+                Area area = new Area(areaList.size() + 1, polygon, rand.nextInt(maxValue - minValue + 1) + minValue, 0.0);
+
+                // Add the area to the list
+                areaList.add(area);
+            }
+        }
+
+        return areaList;
+    }
     @Test
     public void testComputeEuclideanDistance() {
-        // Test the computeEuclideanDistance method to ensure it calculates distances correctly
+
+//        Set<Area> areaSet = new TreeSet<>(createSpoofArea());
+//        double Eucledian = computeEucledianDistance(areaSet, getRandomElement(areaSet));
+//        createImageOfState(areaSet, "initalAreas", "Eudlidian");
+
     }
 
     @Test
     public void testSeedSelection() {
         // Test the SeedSelection method to ensure it selects the correct number of seeds
         // and that the selected seeds satisfy the specified criteria
+
     }
 
     // Paramaters for test case
