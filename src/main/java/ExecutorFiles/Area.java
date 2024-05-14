@@ -9,7 +9,6 @@ public class Area {
     //designated on the fly, query tells us this and disimilalirty
     private Object spatiallyExtensiveAttribute;
 
-
     //How dissikilar one area is from another
     private double dissimilarityAttribute;
 
