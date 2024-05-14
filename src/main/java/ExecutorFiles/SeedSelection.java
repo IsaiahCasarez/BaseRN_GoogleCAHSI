@@ -15,7 +15,7 @@ public class SeedSelection {
         String query = " SELECT REGIONS, REGIONS.p;"
                 + "FROM NYC_census_tracts;"
                 + "WHERE p=10 ,"
-                + "5000 <= MIN ON population, OBJECTIVE COMPACT,"
+                + "5500 <= MIN ON population, OBJECTIVE COMPACT,"
                 + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
         QuerySpecifics queryInfo = null;
         try {
@@ -27,8 +27,9 @@ public class SeedSelection {
             System.out.println(e);
         }
 
-        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 50, true, parseQuery.getQueryInfo(), true);
+        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 5, true, parseQuery.getQueryInfo(), true);
 
+       System.out.println(areaList.size());
     }
 
     //Dummy Data of a 10 by 10 polygons to represent a grid
@@ -83,12 +84,22 @@ public class SeedSelection {
 
     public static Set<Area> SeedSelection(List<Area> areaList, int pRegions, int mIterations, boolean Scattered, QuerySpecifics querySpecifics, boolean printDebugImages) throws InvalidQueryInformation {
         //initialize empty set we will fill with our seeds when done
+        if (printDebugImages) {
+            printPolygons(areaList, "originalUnfilteredAreas" + ".png", "initalAreas");
+        }
         Set<Area> seedSet = new HashSet<>();
 
         //if areas do not satisfy the max and min constraint in C then we do not want to add them to our set (value is above max or below min)
-        for (Area area : areaList) {
+        Iterator<Area> iterator = areaList.iterator();
+        while (iterator.hasNext()) {
+            Area area = iterator.next();
             if (satifiesConstraints(area, querySpecifics)) {
                 seedSet.add(area);
+
+            }
+            else {
+                //TODO: are these locations automatically excluded from areas that can join our region in the future
+                iterator.remove();
             }
         }
 
@@ -96,7 +107,9 @@ public class SeedSelection {
             throw new InvalidQueryInformation("The pRegions you specified: " + pRegions + " is greater than the number of valid seed areas: " + seedSet.size());
         }
 
-       // createImageOfState(seedSet, "maxMinfiltered", "inital");
+        if (printDebugImages) {
+            createImageOfState(seedSet, "areasLeftAfterMinMaxConstraint.png", "Initial State: " );
+        }
 
         //only choose the seeds if we dont want the max number of seeds
         double finalSeedsEucledian = 0;
@@ -187,7 +200,11 @@ public class SeedSelection {
     }
 
     //helper method tp retrive a random element from a set
-    public static <T> T getRandomElement(Set<T> set) {
+    public static <T> T getRandomElement(Set<T> set) throws InvalidQueryInformation {
+
+        if (set.isEmpty()) {
+            throw new InvalidQueryInformation("The seed set size is 0 ,you were likely unable to fulfill the constraints specified");
+        }
 
         T[] array = (T[]) set.toArray();
         Random rand = new Random();
