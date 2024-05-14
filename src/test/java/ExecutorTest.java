@@ -66,7 +66,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void testmaintainsAVGConstraints()  {
+    public void testmaintainsSUMAVGConstraints2()  {
         int[] xCoords = {0, 1, 1, 0};
         int[] yCoords = {0, 1, 1, 0};
         Polygon polygon = new Polygon(xCoords, yCoords, 4);
@@ -79,7 +79,7 @@ public class ExecutorTest {
         String query = " SELECT REGIONS, REGIONS.p;"
                 + "FROM NYC_census_tracts;"
                 + "WHERE p=pmax ,"
-                + "1000 <= AVG ON population OR 1000 < AVG < 2000 ON pop, OBJECTIVE COMPACT,"
+                + "1000 <= SUM ON population OR 500 < AVG < 2000 ON pop OR 5 <= Count on test, OBJECTIVE COMPACT,"
                 + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
         QuerySpecifics queryInfo = null;
         try {
@@ -92,7 +92,11 @@ public class ExecutorTest {
 
         assertTrue(RegionGrowing.maintainsConstraints(areaSet, queryInfo));
 
-
+        Set<Area> areaSet2 = new HashSet<>();
+        for (int i = 1; i <= 5; i++) {
+            areaSet.add(new Area(i, polygon, 2000, 0.0));
+        }
+        assertFalse(RegionGrowing.maintainsConstraints(areaSet2, queryInfo));
     }
 
     @Test
