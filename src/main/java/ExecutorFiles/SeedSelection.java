@@ -7,30 +7,6 @@ import java.util.List;
 import static ExecutorFiles.PolygonGraph.printPolygons;
 
 public class SeedSelection {
-    public static void main(String[] args) throws InvalidQueryInformation {
-        List<Area> areaList = createGridAreas();
-
-        Parser parseQuery = new Parser();
-
-        String query = " SELECT REGIONS, REGIONS.p;"
-                + "FROM NYC_census_tracts;"
-                + "WHERE p=10 ,"
-                + "5500 <= MIN ON population, OBJECTIVE COMPACT,"
-                + "OPTIMIZATION CONNECTED, HEURISTIC TABU;";
-        QuerySpecifics queryInfo = null;
-        try {
-            parseQuery.validateQuery(query);
-            queryInfo = parseQuery.getQueryInfo();
-            System.out.println(queryInfo.toString());
-        }
-        catch (InvalidRSqlSyntaxException e) {
-            System.out.println(e);
-        }
-
-        Set<Area> seedSet = SeedSelection(areaList, (int)queryInfo.getPValueDouble(), 5, true, parseQuery.getQueryInfo(), true);
-
-       System.out.println(areaList.size());
-    }
 
     //Dummy Data of a 10 by 10 polygons to represent a grid
     public static List<Area> createGridAreas() {
@@ -91,11 +67,11 @@ public class SeedSelection {
 
         //if areas do not satisfy the max and min constraint in C then we do not want to add them to our set (value is above max or below min)
         Iterator<Area> iterator = areaList.iterator();
+
         while (iterator.hasNext()) {
             Area area = iterator.next();
             if (satifiesConstraints(area, querySpecifics)) {
                 seedSet.add(area);
-
             }
             else {
                 //TODO: are these locations automatically excluded from areas that can join our region in the future
@@ -181,10 +157,6 @@ public class SeedSelection {
                         //make the seedset equal to the
                         seedSet = modifiedSeedSet;
 
-                        //remove the random area that got added into the seedset
-                        notSeedSet.remove(randomArea);
-                        ///TODO: ask if i should remove this entirely or put it back into the
-                        //   notSeedSet.add(minArea);
                     }
                     finalSeedsEucledian = Math.max(newTotalEucledian, originalTotalEucleidan);
                     mIterations--;
@@ -221,9 +193,9 @@ public class SeedSelection {
             if (subclause.getAggFunction() == QueryEnums.Aggregate.MIN) {
                 //TODO: making assumption here that we did: 100 <= MIN not MIN >= 100!!
                 //if we are less than the min we are not valid
-                Object spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
+                Number spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
                 Double lowerBound = subclause.getLowerBound();
-                if (spatiallyExtensiveAttribute instanceof Number && ((Number) spatiallyExtensiveAttribute).doubleValue() < lowerBound) {
+                if (spatiallyExtensiveAttribute.doubleValue() < lowerBound) {
                     return false;
                 }
             }
@@ -231,9 +203,9 @@ public class SeedSelection {
             if (subclause.getAggFunction() == QueryEnums.Aggregate.MAX) {
                 //TODO: making assumption here that we did: 100 <= MAX not MAX >= 100!!
                 //if we are greater than the MAX we are not valid
-                Object spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
+                Number spatiallyExtensiveAttribute = area.getSpatiallyExtensiveAttribute();
                 Double lowerBound = subclause.getLowerBound();
-                if (spatiallyExtensiveAttribute instanceof Number && ((Number) spatiallyExtensiveAttribute).doubleValue() > lowerBound) {
+                if (spatiallyExtensiveAttribute.doubleValue() > lowerBound) {
                     return false;
                 }
             }
